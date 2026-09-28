@@ -4,7 +4,7 @@
 
 ### Issue tracker
 
-GitHub Issues(用 `gh` CLI;当前仓库还没有 remote,创建并推送 GitHub 仓库后即生效). See `docs/agents/issue-tracker.md`.
+GitHub Issues(用 `gh` CLI;仓库 `ohwald/skills-comparison`,私有). See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 
