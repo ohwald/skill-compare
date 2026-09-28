@@ -1,0 +1,8 @@
+{
+  "source": "anthropics/skills",
+  "license_status": "full",
+  "summary": "官方前端设计技能:确定大胆的美学方向、字体搭配、色彩系统与动效层级,产出有辨识度的生产级界面。",
+  "installs": 980000,
+  "stars": 178700,
+  "url": "https://github.com/anthropics/skills/tree/master/skills/frontend-design"
+}

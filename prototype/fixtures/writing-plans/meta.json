@@ -1,0 +1,8 @@
+{
+  "source": "mattpocock/skills",
+  "license_status": "full",
+  "summary": "知名个人合集的工作流技能:把工作拆成可验证的小步,每步带精确文件路径与验收标准,按可独立交付的粒度分批。",
+  "installs": 860000,
+  "stars": 270900,
+  "url": "https://github.com/mattpocock/skills/tree/main/skills/engineering/writing-plans"
+}

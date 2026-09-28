@@ -1,0 +1,8 @@
+{
+  "source": "obra/superpowers",
+  "license_status": "full",
+  "summary": "社区方法论标杆:红-绿-重构循环,先写失败测试再写最小实现;强调测行为不测实现、每个测试单断言。",
+  "installs": 2100000,
+  "stars": 292000,
+  "url": "https://github.com/obra/superpowers/tree/main/skills/test-driven-development"
+}

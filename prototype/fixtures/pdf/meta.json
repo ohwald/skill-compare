@@ -1,0 +1,8 @@
+{
+  "source": "anthropics/skills",
+  "license_status": "degraded",
+  "summary": "官方 PDF 处理技能:文本/表格提取、新建与合并拆分、表单填写。能力覆盖面广,依赖 pdfplumber/pypdf 等 Python 库;文档类官方 skill 之一,专有许可。",
+  "installs": 1240000,
+  "stars": 178700,
+  "url": "https://github.com/anthropics/skills/tree/master/skills/pdf"
+}

@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Skills Compare — PROTOTYPE</title>
+<style>
+  :root{
+    --bg:#0f1115; --panel:#171a21; --panel2:#1d212b; --line:#2a2f3c; --fg:#e6e9f0;
+    --dim:#8b93a7; --acc:#6ea8fe; --bad:#f0a35e; --ok:#7bd88f; --mono:'SF Mono',ui-monospace,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.5 -apple-system,'PingFang SC','Segoe UI',sans-serif}
+  a{color:var(--acc);text-decoration:none} a:hover{text-decoration:underline}
+  .wm{position:fixed;top:8px;right:10px;z-index:60;background:#5b2020;color:#ffb4b4;font:11px var(--mono);padding:2px 8px;border-radius:6px;letter-spacing:.5px}
+  .lang{position:fixed;top:8px;right:110px;z-index:60;background:var(--panel2);border:1px solid var(--line);color:var(--fg);border-radius:6px;padding:2px 10px;cursor:pointer}
+  .pill{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);z-index:60;display:flex;gap:10px;align-items:center;background:#000c;border:1px solid #444c;padding:6px 12px;border-radius:999px;box-shadow:0 6px 24px #0009}
+  .pill button{background:none;border:none;color:#fff;font-size:16px;cursor:pointer;padding:2px 6px}
+  .pill span{font:12px var(--mono);color:#9fe}
+  .badge{display:inline-block;font:11px/1 var(--mono);padding:3px 7px;border-radius:5px;vertical-align:1px}
+  .b-full{background:#12351c;color:var(--ok)} .b-deg{background:#3a2410;color:var(--bad)}
+  .dim{color:var(--dim)} .mono{font-family:var(--mono);font-size:12px}
+  .meta td{padding:1px 10px 1px 0;white-space:nowrap} .meta td:first-child{color:var(--dim)}
+  input,select{background:var(--panel2);border:1px solid var(--line);color:var(--fg);border-radius:8px;padding:7px 10px;font:inherit;outline:none}
+  input:focus,select:focus{border-color:var(--acc)}
+  button.act{background:var(--panel2);border:1px solid var(--line);color:var(--fg);border-radius:8px;padding:6px 12px;cursor:pointer}
+  button.act:hover{border-color:var(--acc)}
+  .chips{display:flex;gap:8px;flex-wrap:wrap}
+  .chip{background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:4px 12px;cursor:pointer;font-size:12.5px}
+  .chip:hover{border-color:var(--acc)}
+  /* variant A */
+  .a-top{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--line);padding:10px 16px;display:flex;flex-direction:column;gap:8px}
+  .a-slots{display:flex;gap:10px;align-items:center}
+  .a-slots input{flex:1}
+  .a-body{padding:14px 16px}
+  /* variant B */
+  .b-wrap{display:flex;min-height:100vh}
+  .b-side{width:280px;flex:none;border-right:1px solid var(--line);padding:12px;display:flex;flex-direction:column;gap:10px;height:100vh;position:sticky;top:0}
+  .b-focus{display:flex;gap:6px} .b-focus button{flex:1}
+  .b-focus .on{border-color:var(--acc);color:var(--acc)}
+  .b-list{overflow:auto;flex:1;display:flex;flex-direction:column;gap:4px}
+  .b-item{padding:7px 9px;border-radius:8px;cursor:pointer;border:1px solid transparent}
+  .b-item:hover{background:var(--panel2)} .b-item.sel{border-color:var(--acc);background:var(--panel2)}
+  .b-src{margin:8px 0 2px;font:11px var(--mono);color:var(--dim);text-transform:uppercase;letter-spacing:.5px}
+  .b-main{flex:1;padding:16px;min-width:0}
+  /* variant C */
+  .c-stage{display:flex;gap:16px;justify-content:center;padding:22px 16px 6px;flex-wrap:wrap}
+  .c-card{width:340px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px}
+  .c-card h3{margin:6px 0 2px;font-size:16px}
+  .c-card .row{display:flex;justify-content:space-between;gap:8px;border-top:1px dashed var(--line);padding:5px 0;font-size:12.5px}
+  .c-card .row span:first-child{color:var(--dim)}
+  .c-hint{ text-align:center;color:var(--dim);font:12px var(--mono);padding:4px 16px 0}
+  .c-main{padding:10px 16px 20px}
+  /* compare area (shared) */
+  .cmp{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel)}
+  .cmp-head{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--line)}
+  .cmp-head>div{padding:10px 14px;background:var(--panel2)}
+  .cmp-head>div+div{border-left:1px solid var(--line)}
+  .cmp-cols{display:grid;grid-template-columns:1fr 1fr;min-height:300px}
+  .cmp-cols>*{min-width:0}
+  .cmp-cols>div+div{border-left:1px solid var(--line)}
+  .sumcard{padding:18px;display:flex;flex-direction:column;gap:10px;align-items:flex-start}
+  .pre{margin:0;padding:14px;overflow:auto;max-height:520px;font:12.5px/1.55 var(--mono);white-space:pre-wrap}
+  .empty{padding:40px;text-align:center;color:var(--dim)}
+  #ed{height:520px}
+</style>
+</head>
+<body>
+<div class="wm">PROTOTYPE · wayfinder #6</div>
+<button class="lang" id="lang"></button>
+<div id="app"></div>
+<div class="pill"><button id="pv">←</button><span id="vl"></span><button id="nx">→</button></div>
+<script id="manifest" type="application/json">__MANIFEST__</script>
+<script>
+const M = JSON.parse(document.getElementById('manifest').textContent);
+const BY = Object.fromEntries(M.skills.map(s=>[s.id,s]));
+
+/* ---------- i18n (UI chrome only; skill content stays original) ---------- */
+const I18N = {
+ zh:{slotA:'A 槽',slotB:'B 槽',swap:'⇄ 交换',featured:'精选组合',random:'🎲 随机对比',search:'搜索 skill…',
+    pick:'选择 skill',licenseFull:'全文可比',licenseDegraded:'专有·仅摘要',installs:'安装量',stars:'stars',
+    lines:'行数',tokens:'token 估',summary:'官方摘要',viewSrc:'查看原文',src:'来源',license:'许可',
+    degNote:'该 skill 为专有/未声明许可,仅展示元数据与官方摘要,不转载原文。',
+    empty:'在上方选择两个 skill 开始对比',urlHint:'本变体无站内发现入口,用 URL 直达:',focus:'当前指派到',
+    vA:'A 顶部双槽',vB:'B 左侧栏',vC:'C 卡居中'},
+ en:{slotA:'Slot A',slotB:'Slot B',swap:'⇄ Swap',featured:'Featured pairs',random:'🎲 Random pair',search:'Search skills…',
+    pick:'Pick a skill',licenseFull:'Full text',licenseDegraded:'Proprietary · summary',installs:'Installs',stars:'stars',
+    lines:'Lines',tokens:'~tokens',summary:'Official summary',viewSrc:'View source',src:'Source',license:'License',
+    degNote:'Proprietary/undeclared license: metadata + official summary only; original text is not reproduced.',
+    empty:'Pick two skills to compare',urlHint:'No in-site discovery in this variant — deep link:',focus:'Assigning to',
+    vA:'A Top slots',vB:'B Sidebar',vC:'C Cards'}
+};
+let lang = localStorage.getItem('lang') || 'zh';
+const t = k => (I18N[lang] && I18N[lang][k]) || k;
+document.getElementById('lang').textContent = lang === 'zh' ? 'EN' : '中文';
+document.getElementById('lang').onclick = () => { lang = lang==='zh'?'en':'zh'; localStorage.setItem('lang',lang);
+  document.getElementById('lang').textContent = lang==='zh'?'EN':'中文'; render(); };
+
+/* ---------- state / URL ---------- */
+const q0 = new URLSearchParams(location.search);
+const S = { variant: q0.get('variant')||'A', a: q0.get('a')||'frontend-design', b: q0.get('b')||'test-driven-development', focus:'a', query:'' };
+function sync(){ const q=new URLSearchParams({variant:S.variant,a:S.a,b:S.b}); history.replaceState(null,'','?'+q); }
+function setSlot(slot,id){ S[slot]=id; sync(); render(); }
+function setVariant(v){ S.variant=v; sync(); render(); }
+
+/* ---------- helpers ---------- */
+const fmt = n => n==null?'—':(n>=1e6?(n/1e6).toFixed(1)+'M':n>=1e3?(n/1e3).toFixed(0)+'k':n);
+const badge = s => s.license_status==='full'
+  ? `<span class="badge b-full">${t('licenseFull')}</span>`
+  : `<span class="badge b-deg">${t('licenseDegraded')}</span>`;
+const metaTable = s => `<table class="meta">
+  <tr><td>${t('src')}</td><td><a href="${s.url}" target="_blank">${s.source}</a></td></tr>
+  <tr><td>${t('license')}</td><td>${badge(s)} <span class="mono dim">${s.license}</span></td></tr>
+  <tr><td>${t('installs')}</td><td class="mono">${fmt(s.installs)}</td></tr>
+  <tr><td>${t('stars')}</td><td class="mono">${fmt(s.stars)}</td></tr>
+  <tr><td>${t('lines')}</td><td class="mono">${s.lines}</td></tr>
+  <tr><td>${t('tokens')}</td><td class="mono">~${fmt(s.tokens)}</td></tr></table>`;
+const degCard = s => `<div class="sumcard">
+  <div>${badge(s)}</div>
+  <div class="dim" style="max-width:46ch">${t('degNote')}</div>
+  <div><b>${t('summary')}</b></div><div style="max-width:52ch">${s.summary}</div>
+  <a class="act" style="padding:6px 12px;border:1px solid var(--line);border-radius:8px" href="${s.url}" target="_blank">${t('viewSrc')} ↗</a></div>`;
+const emptyPane = () => `<div class="empty">${t('empty')}</div>`;
+
+/* ---------- shared compare area ---------- */
+let monacoEd=null, seq=0;
+function compareHTML(){
+  const A=BY[S.a], B=BY[S.b];
+  const head = `<div class="cmp-head">
+    <div><b>${A?A.name:'—'}</b> <span class="mono dim">A</span> ${A?badge(A):''}</div>
+    <div><b>${B?B.name:'—'}</b> <span class="mono dim">B</span> ${B?badge(B):''}</div></div>`;
+  let cols;
+  if(!A&&!B) cols=`<div class="cmp-cols">${emptyPane()}</div>`;
+  else if(A&&A.license_status==='full'&&B&&B.license_status==='full')
+    cols=`<div class="cmp-cols"><div id="ed"></div></div>`;
+  else{
+    const pane=(s)=> s ? (s.license_status==='full' ? `<pre class="pre">${s.body.replace(/</g,'&lt;')}</pre>` : degCard(s)) : emptyPane();
+    cols=`<div class="cmp-cols">${pane(A)}${pane(B)}</div>`;
+  }
+  return `<div class="cmp">${head}${cols}</div>`;
+}
+function mountMonaco(){
+  const A=BY[S.a], B=BY[S.b];
+  if(!(A&&B&&A.license_status==='full'&&B.license_status==='full')) return;
+  const my=++seq, el=document.getElementById('ed'); if(!el) return;
+  const fail=()=>{ if(my!==seq) return; el.outerHTML=`<div class="cmp-cols">
+    <pre class="pre">${A.body.replace(/</g,'&lt;')}</pre><pre class="pre">${B.body.replace(/</g,'&lt;')}</pre></div>`; };
+  try{
+    if(window.require){ init(); return; }
+    const sc=document.createElement('script');
+    sc.src='https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/loader.min.js';
+    sc.onload=()=>{ require.config({paths:{vs:'https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs'}}); init(); };
+    sc.onerror=fail; document.head.appendChild(sc);
+    setTimeout(()=>{ if(!window.require && my===seq && !document.querySelector('.monaco-editor')) fail(); },4000);
+    function init(){
+      if(my!==seq) return;
+      require(['vs/editor/editor.main'],()=>{
+        if(my!==seq||!document.getElementById('ed')) return;
+        if(monacoEd){ try{ const m=monacoEd.getModel(); monacoEd.dispose(); m&&m.dispose&&m.dispose(); }catch(e){} }
+        const mo=monaco.editor.createModel(A.body,'markdown'), mm=monaco.editor.createModel(B.body,'markdown');
+        monacoEd=monaco.editor.createDiffEditor(document.getElementById('ed'),{readOnly:true,originalEditable:false,
+          renderSideBySide:true,wordWrap:'on',automaticLayout:true,diffAlgorithm:'advanced',theme:'vs-dark'});
+        monacoEd.setModel({original:mo,modified:mm});
+      },fail);
+    }
+  }catch(e){ fail(); }
+}
+
+/* ---------- variants ---------- */
+const opts=(sel)=> M.skills.map(s=>`<option value="${s.id}" ${s.id===sel?'selected':''}>${s.name}</option>`).join('');
+const V={};
+V.A=()=>`<div class="a-top">
+  <div class="a-slots">
+    <input id="ia" list="dl" placeholder="${t('slotA')}" value="${S.a?BY[S.a].name:''}">
+    <button class="act" id="swap">${t('swap')}</button>
+    <input id="ib" list="dl" placeholder="${t('slotB')}" value="${S.b?BY[S.b].name:''}">
+    <datalist id="dl">${M.skills.map(s=>`<option value="${s.name}">`).join('')}</datalist>
+  </div>
+  <div class="chips"><span class="dim" style="align-self:center">${t('featured')}:</span>
+    ${M.featured.map(p=>`<span class="chip" data-p="${p.join(' ')}">${BY[p[0]].name} × ${BY[p[1]].name}</span>`).join('')}</div>
+</div>
+<div class="a-body">
+  ${(S.a||S.b)?metaGrid():''}
+  ${compareHTML()}
+</div>`;
+function metaGrid(){ const A=BY[S.a],B=BY[S.b];
+  return `<div class="cmp" style="margin-bottom:12px"><div class="cmp-head">
+    <div>${A?metaTable(A):''}</div><div>${B?metaTable(B):''}</div></div></div>`; }
+V.B=()=>{
+  const q=S.query.toLowerCase();
+  const groups={}; M.skills.filter(s=>!q||s.name.toLowerCase().includes(q)||s.description.toLowerCase().includes(q))
+    .forEach(s=>{(groups[s.source]=groups[s.source]||[]).push(s)});
+  const list=Object.entries(groups).map(([g,arr])=>`<div class="b-src">${g}</div>`+
+    arr.map(s=>`<div class="b-item ${s.id===S.a||s.id===S.b?'sel':''}" data-id="${s.id}">${badge(s)} ${s.name}</div>`).join('')).join('');
+  return `<div class="b-wrap"><div class="b-side">
+    <input id="bq" placeholder="${t('search')}" value="${S.query}">
+    <div class="b-focus"><span class="dim mono" style="align-self:center">${t('focus')}</span>
+      <button class="act ${S.focus==='a'?'on':''}" id="fa">${t('slotA')}</button>
+      <button class="act ${S.focus==='b'?'on':''}" id="fb">${t('slotB')}</button></div>
+    <div class="b-list">${list}</div>
+    <button class="act" id="rnd">${t('random')}</button>
+  </div><div class="b-main">${metaGrid()}${compareHTML()}</div></div>`;
+};
+V.C=()=>`<div class="c-stage">
+  ${['a','b'].map(k=>{ const s=BY[S[k]]; return `<div class="c-card">
+    <span class="mono dim">${k.toUpperCase()}</span>
+    <select id="cs-${k}"><option value="">— ${t('pick')} —</option>${opts(S[k])}</select>
+    ${s?`<h3>${s.name} ${badge(s)}</h3><div class="dim" style="font-size:12.5px">${s.description}</div>
+      <div style="margin-top:8px">${metaTable(s)}</div>
+      ${s.license_status==='degraded'?`<div style="margin-top:8px"><b class="dim">${t('summary')}:</b> ${s.summary}</div>`:''}`:''}
+  </div>`;}).join('')}
+</div>
+<div class="c-hint">${t('urlHint')} <span style="color:var(--acc)">?variant=C&amp;a=${S.a}&amp;b=${S.b}</span></div>
+<div class="c-main">${compareHTML()}</div>`;
+
+/* ---------- bind per variant ---------- */
+function bind(){
+  const byName=n=>M.skills.find(s=>s.name===n);
+  if(S.variant==='A'){
+    ia.onchange=()=>{const s=byName(ia.value.trim()); if(s) setSlot('a',s.id);};
+    ib.onchange=()=>{const s=byName(ib.value.trim()); if(s) setSlot('b',s.id);};
+    swap.onclick=()=>{const a=S.a;S.a=S.b;S.b=a;sync();render();};
+    document.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{const[a,b]=c.dataset.p.split(' ');S.a=a;S.b=b;sync();render();});
+  }else if(S.variant==='B'){
+    bq.oninput=()=>{S.query=bq.value;const sc=()=>{render();const i=document.getElementById('bq');i.focus();i.setSelectionRange(i.value.length,i.value.length)};sc();};
+    fa.onclick=()=>{S.focus='a';render();}; fb.onclick=()=>{S.focus='b';render();};
+    document.querySelectorAll('.b-item').forEach(i=>i.onclick=()=>setSlot(S.focus,i.dataset.id));
+    rnd.onclick=()=>{ const full=M.skills.filter(s=>s.license_status==='full');
+      const i=Math.floor(Math.random()*full.length); let j=Math.floor(Math.random()*full.length);
+      if(j===i) j=(j+1)%full.length; S.a=full[i].id;S.b=full[j].id;sync();render(); };
+  }else{
+    document.querySelectorAll('.c-card select').forEach(sel=>{
+      sel.onchange=()=>setSlot(sel.id.slice(3), sel.value);
+    });
+  }
+  mountMonaco();
+}
+
+/* ---------- render / shell ---------- */
+function render(){
+  try{ if(monacoEd){ const ms=monacoEd.getModel? [monacoEd.getOriginalModel(),monacoEd.getModifiedModel()]:[];
+    ms.forEach(m=>m&&m.dispose&&m.dispose()); monacoEd.dispose(); monacoEd=null; } }catch(e){}
+  seq++;
+  document.getElementById('app').innerHTML = V[S.variant]();
+  document.getElementById('vl').textContent = `${S.variant} (${t('v'+S.variant)})`;
+  bind();
+}
+document.getElementById('pv').onclick=()=>setVariant(S.variant==='A'?'C':S.variant==='B'?'A':'B');
+document.getElementById('nx').onclick=()=>setVariant(S.variant==='A'?'B':S.variant==='B'?'C':'A');
+document.addEventListener('keydown',e=>{
+  if(/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName))return;
+  if(e.key==='ArrowLeft')document.getElementById('pv').click();
+  if(e.key==='ArrowRight')document.getElementById('nx').click();
+});
+render();
+</script>
+</body>
+</html>
