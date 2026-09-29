@@ -1,6 +1,6 @@
 # Skill Compare
 
-**[🚀 Live site](https://ohwald.github.io/skills-comparison/)** · [简体中文](README.zh-CN.md)
+**[🚀 Live site](https://ohwald.github.io/skill-compare/)** · [简体中文](README.zh-CN.md)
 
 Side-by-side comparison site for **Agent Skills** (SKILL.md packages): pick any two skills and read them next to each other with a real diff, compare a skill against its own history along the commit timeline, and inspect proprietary skills through metadata-only "degraded" views.
 

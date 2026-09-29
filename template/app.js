@@ -176,7 +176,7 @@ function topbar() {
         <button class="${state.lang === "en" ? "on" : ""}" data-act="lang-en">EN</button>
       </div>
       <select class="theme-sel" data-act="theme">${opts}</select>
-      <a href="https://github.com/ohwald/skills-comparison" target="_blank" rel="noopener">${icon("gh", 17, "var(--dim)")}</a>
+      <a href="https://github.com/ohwald/skill-compare" target="_blank" rel="noopener">${icon("gh", 17, "var(--dim)")}</a>
     </div></div>`;
 }
 function slotEl(side) {
