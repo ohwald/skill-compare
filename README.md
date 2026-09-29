@@ -1,56 +1,80 @@
 # Skill Compare
 
-Agent Skills 并排对比站 —— 聚合三大精选内容源约 60+ 个 skill,任选两个横向深读对比(Monaco diff);同一 skill 可沿 commit 时间轴任选两个时间点自比;专有许可 skill 降级展示;Tokyo Night 默认配色 + 六套编辑器主题;中英双语。纯 Python stdlib 管线 + 零构建单文件前端,无任何运行时依赖。
+**[🚀 Live site](https://ohwald.github.io/skills-comparison/)** · [简体中文](README.zh-CN.md)
 
-设计稿:[design.pen](design.pen)(v3 四屏)· 渲染图:[design-preview/](design-preview/)
+Side-by-side comparison site for **Agent Skills** (SKILL.md packages): pick any two skills and read them next to each other with a real diff, compare a skill against its own history along the commit timeline, and inspect proprietary skills through metadata-only "degraded" views.
 
-## 快速开始
+Pure Python-stdlib pipeline + a zero-build single-file frontend (vanilla JS + Monaco via CDN). No runtime dependencies.
+
+## Features
+
+- **Side-by-side comparison** — Monaco diff editor (falls back to plain columns when the CDN is unreachable), A/B identity colors running through slots and columns
+- **Version comparison** — every slot is a *skill @ time point*: pick any commit (with upstream tag annotations) per side; two slots on the same skill automatically become a version diff with a clickable commit timeline
+- **Structured view** — content is segmented by the official SKILL.md convention (YAML frontmatter + heading hierarchy, code fences kept intact) with a structure TOC that jumps both columns; a raw-diff toggle is one click away
+- **License-aware** — permissive-licensed skills are shown in full; proprietary/undeclared ones are *degraded* (metadata + source link only, original text never reproduced)
+- **Curated sources** — [anthropics/skills](https://github.com/anthropics/skills), [obra/superpowers](https://github.com/obra/superpowers), [mattpocock/skills](https://github.com/mattpocock/skills) (~60 skills; extend via config)
+- **6 editor themes** — Tokyo Night (default), Catppuccin Mocha, One Dark Pro, GitHub Light, One Light, Solarized Light; plus a 中文/English bilingual UI
+
+## Quick start
 
 ```bash
-# 1) 采集三个内容源(单分支全历史克隆,首次约 10s)
+# fetch the three content sources (single-branch, full history)
 python3 -m pipeline.collect
 
-# 2) 构建(含版本轴提取 + 可选联网辅助数据)
+# build (version axis + optional networked aux data)
 python3 -m pipeline.build --real --out site --fetch-aux
 
-# 3) 本地预览(fetch 需要 http)
+# preview
 python3 -m http.server 8765 -d site
-# 打开 http://localhost:8765
 ```
 
-测试/演示模式(无网络,用 fixtures/ 下 4 个样例):
+No-network demo mode:
 
 ```bash
 python3 -m pipeline.build --fixtures fixtures --out site
 ```
 
-## 测试
+Requires Python ≥ 3.11 (stdlib only) and `git`.
+
+## Tests
 
 ```bash
 python3 -m pytest -q
 ```
 
-唯一正式测试 seam 是 Python 管线(frontmatter 解析、许可分流、同名去重、版本轴提取、manifest 校验);前端为零构建 vanilla JS,以 design-preview/ 渲染图人工验收。
+The pipeline is the only formal test seam: frontmatter parsing, license triage, canonical dedup, version-axis extraction, and manifest validation are covered end-to-end (including a daily-update loop test against a simulated upstream). The frontend is zero-build vanilla JS and is accepted manually against `design-preview/`.
 
-## 架构
+## Architecture
 
 ```
 pipeline/
-├── collect.py    # clone/fetch 内容源 + 辅助数据(marketplace 分类、skills.sh 安装量、stars)
-├── parse.py      # SKILL.md frontmatter 解析 + 许可分流(宽松许可 → 全文可比)
-├── manifest.py   # 遍历收录 + 同名去重(Canonical 优先 / 也见于)+ 指纹
-├── versions.py   # 版本轴:per-path commit 历史(日期+短sha),tag 落点标注
-├── validate.py   # 构建期 manifest 校验(失败即构建失败)
-└── build.py      # 组装单文件站点(manifest 内联 + 正文按指纹 fetch)+ 六主题 CSS
-template/index.html   # 前端模板(选择器 / 对比 / 降级 / 版本模式四态单页)
+├── collect.py    # clone/fetch sources + aux data (marketplace categories, skills.sh installs, stars)
+├── parse.py      # SKILL.md frontmatter parsing + license triage
+├── manifest.py   # collection walk + canonical dedup ("also seen") + content fingerprints
+├── versions.py   # version axis: per-path commit history (date + short sha, tag annotations)
+├── validate.py   # build-time manifest validation (build fails loudly)
+└── build.py      # single-file site assembly (inline manifest, per-fingerprint bodies, 6-theme CSS)
+template/          # index.html + app.js (picker / compare / degraded / version-mode states)
+design-preview/    # rendered design references, theme screenshots, themes.json (color tokens)
 ```
 
-## 部署
+Data flow: `collect → parse → license triage → canonical dedup → version axis → validate → single-file site`. Bodies are served per content fingerprint so switching comparisons only fetches what changed.
 
-`.github/workflows/capture.yml` 定时重建并提交 `site/`;`pages.yml` 在 push / capture 完成后把 `site/` 发布到 GitHub Pages。
+## Themes
 
-> **注意**:私有仓库在 GitHub Free 下无法使用 GitHub Pages——需要升级 Pro、或将仓库转为 public。
+`design-preview/themes.json` is the single source of truth for color tokens; the build inlines all six presets as CSS variables and the site ships a switcher. Adding a preset = adding an entry there.
 
-## 配置
+## Deployment
 
-扩源/剔除只改 [pipeline/config.py](pipeline/config.py)(SOURCES / LENIENT_LICENSES / DEFAULT_FEATURED);主题色板见 [design-preview/themes.json](design-preview/themes.json)。
+- **Capture** (`.github/workflows/capture.yml`, daily 02:23 UTC): quality gate → re-collect → rebuild → commit `site/`
+- **Pages** (`.github/workflows/pages.yml`): deploys the committed `site/` to GitHub Pages on push / capture completion
+
+## Contributing
+
+Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/) and are written in English:
+
+```
+<type>(<optional scope>): <summary in imperative mood>
+```
+
+Types: `feat` `fix` `docs` `refactor` `test` `build` `ci` `chore`. Examples: `feat(picker): filter skills by source`, `fix(build): fail on leftover template placeholders`.
