@@ -37,7 +37,7 @@ def theme_list(themes):
 
 
 def build(fixtures_dir=None, real=False, sources_dir=".sources", out="site",
-          fetch_aux=False, cache_dir=".cache"):
+          fetch_aux=False, cache_dir=".cache", sources=None):
     themes_path = THEMES_JSON
     themes = json.loads(themes_path.read_text())["themes"]
     entries, repo_dirs = [], {}
@@ -46,7 +46,7 @@ def build(fixtures_dir=None, real=False, sources_dir=".sources", out="site",
                "priority": 1, "exclude": []}
         entries = M.collect_source_entries(cfg, fixtures_dir)
     else:
-        for src in config.SOURCES:
+        for src in (sources or config.SOURCES):
             d = collect.ensure_repo(src, sources_dir)
             repo_dirs[src["id"]] = d
             entries += M.collect_source_entries(src, str(d))
