@@ -37,7 +37,8 @@ def collect_source_entries(source, repo_dir):
         path = os.path.join(root, "SKILL.md")
         with open(path, encoding="utf-8", errors="replace") as f:
             text = f.read()
-        meta, body = parse_frontmatter(text)
+        meta, _body = parse_frontmatter(text)
+        body = text  # 保留原始全文(含 frontmatter):前端按官方结构分段展示
         lic_text = ""
         for lic_name in ("LICENSE.txt", "LICENSE"):
             lic_path = os.path.join(root, lic_name)

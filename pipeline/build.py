@@ -101,6 +101,7 @@ def build(fixtures_dir=None, real=False, sources_dir=".sources", out="site",
     html = html.replace("__THEME_LIST__", theme_list(themes))
     html = html.replace("__MANIFEST__", payload)
     (out_dir / "index.html").write_text(html, encoding="utf-8")
+    shutil.copy(TEMPLATE.parent / "app.js", out_dir / "app.js")
     print(f"构建完成:{manifest['count']} skills,{len(bodies)} 份正文 → {out_dir}/")
 
 
