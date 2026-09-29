@@ -240,18 +240,37 @@ function timelineEl(sk) {
   if (n < 2) return "";
   const ia = refIdx(sk, state.refA), ib = refIdx(sk, state.refB);
   const pos = i => (n === 1 ? 50 : (i / (n - 1)) * 100);
-  const dots = vs.map((v, i) => {
-    const cls = i === ia ? "sel-a" : (i === ib ? "sel-b" : "");
-    const star = v.tags && v.tags.length ? " ★" : "";
-    return `<button class="t-dot ${cls}" data-dot="${i}" style="left:${pos(i)}%" title="${esc(v.date + " · " + v.sha + star)}"></button>`;
-  }).join("");
-  const flag = (i, cls) => vs[i] && vs[i].tags && vs[i].tags.length
-    ? `<span class="flag ${cls}">★ ${esc(vs[i].tags.join(", "))}</span>` : `<span></span>`;
-  return `<div class="timeline">
-    <div class="t-flags" style="justify-content:space-between;padding:0 30px">${flag(ia, "t-flag-a")}${flag(ib, "t-flag-b")}</div>
-    <div class="t-rail"><div class="line"></div>${dots}</div>
+  const stars = vs.map((v, i) => v.tags && v.tags.length
+    ? `<span class="t-star" style="left:${pos(i)}%" title="${esc(v.tags.join(", "))}">★</span>` : "").join("");
+  const flags = `<div class="t-flags" style="justify-content:space-between;padding:0 30px">${
+    (vs[ia].tags && vs[ia].tags.length) ? `<span class="flag t-flag-a">★ ${esc(vs[ia].tags.join(", "))}</span>` : "<span></span>"
+  }${(vs[ib].tags && vs[ib].tags.length) ? `<span class="flag t-flag-b">★ ${esc(vs[ib].tags.join(", "))}</span>` : "<span></span>"}</div>`;
+  return `<div class="timeline">${flags}
+    <div class="t-slider">
+      <div class="t-line"></div>${stars}
+      <input type="range" class="ts-a" min="0" max="${n - 1}" step="1" value="${ia}"
+             style="z-index:${ia >= ib ? 3 : 4}" aria-label="A time point">
+      <input type="range" class="ts-b" min="0" max="${n - 1}" step="1" value="${ib}"
+             style="z-index:${ib > ia ? 4 : 3}" aria-label="B time point">
+    </div>
     <div class="t-dates"><span class="da">${esc(vs[ia].date + " · " + vs[ia].sha)}</span>
     <span class="db">${esc(vs[ib].date + " · " + vs[ib].sha)}</span></div></div>`;
+}
+function lightTimelineUpdate() {
+  const sk = skill(state.a); if (!sk) return;
+  const va = resolveV("A"), vb = resolveV("B");
+  const da = app.querySelector(".t-dates .da"), db = app.querySelector(".t-dates .db");
+  if (da && va) da.textContent = va.date + " · " + va.sha;
+  if (db && vb) db.textContent = vb.date + " · " + vb.sha;
+  const names = [headName("A"), headName("B")];
+  app.querySelectorAll(".colhead .nm").forEach((el, i) => el.textContent = names[i]);
+  document.querySelectorAll(".slot .timechip").forEach((el, idx) => {
+    const side = idx === 0 ? "A" : "B";
+    const s = slotSkill(side);
+    const ref = side === "A" ? state.refA : state.refB;
+    const lb = s ? refLabel(s, ref) : "";
+    el.innerHTML = icon("clock", 10, "var(--dim)") + esc(lb || t("latest"));
+  });
 }
 function render() {
   renderSeq++;
@@ -459,11 +478,17 @@ function bind() {
       state.picker = null; state.query = ""; render();
     }
   };
-  app.querySelectorAll(".t-dot").forEach(d => d.onclick = () => {
-    const i = String(parseInt(d.getAttribute("data-dot"), 10));
-    if (i === String(refIdx(skill(state.a), state.refA))) setTime("B", "latest");
-    else setTime("B", i);
-  });
+  const sk = skill(state.a);
+  const inA = app.querySelector(".ts-a"), inB = app.querySelector(".ts-b");
+  if (inA && inB && sk) {
+    inA.oninput = () => { let v = +inA.value; const b = +inB.value;
+      if (v > b) { v = b; inA.value = v; }
+      state.refA = String(v); lightTimelineUpdate(); };
+    inB.oninput = () => { let v = +inB.value; const a = +inA.value;
+      if (v < a) { v = a; inB.value = v; }
+      state.refB = String(v); lightTimelineUpdate(); };
+    inA.onchange = inB.onchange = () => { syncURL(); render(); };
+  }
   app.querySelectorAll("[data-conflict]").forEach(b => b.onclick = () => setSlot("B", b.getAttribute("data-conflict")));
   app.querySelectorAll("[data-src]").forEach(b => b.onclick = () => window.open(b.getAttribute("data-src"), "_blank"));
 }

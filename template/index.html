@@ -82,13 +82,21 @@ button{font-family:var(--font-ui)}
                font-family:var(--font-mono);font-size:10.5px}
 .t-flag-a{background:var(--blue-soft);color:var(--blue)}
 .t-flag-b{background:var(--purple-soft);color:var(--purple)}
-.t-rail{position:relative;height:18px}
-.t-rail .line{position:absolute;left:0;right:0;top:8px;height:2px;background:var(--line)}
-.t-dot{position:absolute;top:3px;width:12px;height:12px;border-radius:7px;background:var(--gutter);
-       transform:translateX(-50%);cursor:pointer;border:0;padding:0}
-.t-dot:hover{background:var(--dim)}
-.t-dot.sel-a{background:var(--blue);top:1px;width:16px;height:16px;box-shadow:0 0 0 3px var(--blue-soft)}
-.t-dot.sel-b{background:var(--purple);top:1px;width:16px;height:16px;box-shadow:0 0 0 3px var(--purple-soft)}
+.t-slider{position:relative;height:28px;margin:0 6px}
+.t-slider .t-line{position:absolute;left:0;right:0;top:13px;height:2px;background:var(--line)}
+.t-star{position:absolute;top:-6px;transform:translateX(-50%);color:var(--orange);
+        font-size:10px;pointer-events:none}
+.t-slider input[type=range]{position:absolute;left:0;width:100%;top:5px;height:18px;margin:0;
+  -webkit-appearance:none;appearance:none;background:none;pointer-events:none;outline:none}
+.t-slider input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;pointer-events:auto;
+  width:16px;height:16px;border-radius:9px;cursor:grab;border:2px solid var(--bg)}
+.t-slider input[type=range]::-moz-range-thumb{pointer-events:auto;width:14px;height:14px;
+  border-radius:8px;cursor:grab;border:2px solid var(--bg)}
+.t-slider input.ts-a::-webkit-slider-thumb{background:var(--blue)}
+.t-slider input.ts-b::-webkit-slider-thumb{background:var(--purple)}
+.t-slider input.ts-a::-moz-range-thumb{background:var(--blue)}
+.t-slider input.ts-b::-moz-range-thumb{background:var(--purple)}
+.t-slider input.ts-a:active::-webkit-slider-thumb,.t-slider input.ts-b:active::-webkit-slider-thumb{cursor:grabbing}
 .t-dates{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:10.5px}
 .t-dates .da{color:var(--blue)}.t-dates .db{color:var(--purple)}
 /* 对比主体 */
