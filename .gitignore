@@ -1,1 +1,11 @@
 .DS_Store
+# 本地采集数据(不入库;site/ 构建产物由 capture 工作流提交)
+.sources/
+.cache/
+data/
+__pycache__/
+.pytest_cache/
+*.pyc
+fonts/
+images/
+embedded-image*.png

@@ -27,7 +27,8 @@
     "red_bg": "#3f2a3c",
     "orange": "#e0af68",
     "orange_bg": "#3a2e1f"
-   }
+   },
+   "label": "Tokyo Night"
   },
   "catppuccin-mocha": {
    "mode": "dark",
@@ -55,7 +56,8 @@
     "red_bg": "#3b2a3a",
     "orange": "#fab387",
     "orange_bg": "#3a2f28"
-   }
+   },
+   "label": "Catppuccin Mocha"
   },
   "one-dark-pro": {
    "mode": "dark",
@@ -83,7 +85,8 @@
     "red_bg": "#3c2f32",
     "orange": "#d19a66",
     "orange_bg": "#3d3527"
-   }
+   },
+   "label": "One Dark Pro"
   },
   "github-light": {
    "mode": "light",
@@ -111,7 +114,8 @@
     "red_bg": "#ffebe9",
     "orange": "#9a6700",
     "orange_bg": "#fff3d6"
-   }
+   },
+   "label": "GitHub Light"
   },
   "one-light": {
    "mode": "light",
@@ -139,7 +143,8 @@
     "red_bg": "#fcebec",
     "orange": "#c18401",
     "orange_bg": "#fbf0d9"
-   }
+   },
+   "label": "One Light"
   },
   "solarized-light": {
    "mode": "light",
@@ -167,7 +172,8 @@
     "red_bg": "#f5e4de",
     "orange": "#cb4b16",
     "orange_bg": "#f5ecd4"
-   }
+   },
+   "label": "Solarized Light"
   }
  }
 }

@@ -1,0 +1,46 @@
+name: Capture
+
+on:
+  schedule:
+    - cron: "23 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: capture
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install test runner
+        run: pip install pytest
+      - name: Quality gate
+        run: python -m pytest -q
+      - name: Collect sources
+        run: python3 -m pipeline.collect
+      - name: Build site
+        run: python3 -m pipeline.build --real --out site --fetch-aux
+      - name: Commit rebuilt site
+        id: commit
+        run: |
+          git add site
+          if git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            git commit -m "capture: rebuild site $(date -u +%FT%TZ)"
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Push
+        if: steps.commit.outputs.changed == 'true'
+        run: git push
+      - name: Report failures
+        if: failure()
+        run: echo "::error::capture 构建失败,详见日志"
