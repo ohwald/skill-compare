@@ -27,6 +27,7 @@ def theme_css(themes):
     blocks = []
     for tid, t in themes.items():
         decl = ";\n".join(f"--{k.replace('_', '-')}:{v}" for k, v in t["colors"].items())
+        decl += f";\ncolor-scheme:{t.get('mode', 'dark')}"
         blocks.append(f'[data-theme="{tid}"]{{\n{decl}\n}}')
     return "\n".join(blocks)
 
