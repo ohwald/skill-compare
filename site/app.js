@@ -17,7 +17,7 @@ const I18N = {
       viewSec:"Structure",viewRaw:"Raw diff",toc:"Structure",lines:"lines"}
 };
 /* ---------- 主题 ---------- */
-const THEMES = __THEME_LIST__;
+const THEMES = [{"id": "tokyo-night", "label": "Tokyo Night"}, {"id": "catppuccin-mocha", "label": "Catppuccin Mocha"}, {"id": "one-dark-pro", "label": "One Dark Pro"}, {"id": "github-light", "label": "GitHub Light"}, {"id": "one-light", "label": "One Light"}, {"id": "solarized-light", "label": "Solarized Light"}];
 /* ---------- 状态:槽位 = skill @ 时间点 ---------- */
 const q = new URLSearchParams(location.search);
 const state = {

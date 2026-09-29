@@ -8,6 +8,7 @@
 import argparse
 import datetime
 import json
+import re
 import shutil
 import sys
 from pathlib import Path
@@ -101,7 +102,17 @@ def build(fixtures_dir=None, real=False, sources_dir=".sources", out="site",
     html = html.replace("__THEME_LIST__", theme_list(themes))
     html = html.replace("__MANIFEST__", payload)
     (out_dir / "index.html").write_text(html, encoding="utf-8")
-    shutil.copy(TEMPLATE.parent / "app.js", out_dir / "app.js")
+    app_js = (TEMPLATE.parent / "app.js").read_text()
+    app_js = app_js.replace("__THEME_LIST__", theme_list(themes))
+    (out_dir / "app.js").write_text(app_js, encoding="utf-8")
+    # 防回归:任何产物里残留占位符 = 模板替换遗漏,直接构建失败
+    leftovers = []
+    for f in ("index.html", "app.js"):
+        found = re.findall(r"__[A-Z_]+__", (out_dir / f).read_text())
+        if found:
+            leftovers.append(f"{f}: {sorted(set(found))}")
+    if leftovers:
+        raise ValueError("构建产物残留占位符 → " + "; ".join(leftovers))
     print(f"构建完成:{manifest['count']} skills,{len(bodies)} 份正文 → {out_dir}/")
 
 
