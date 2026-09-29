@@ -150,39 +150,74 @@ const BY = Object.fromEntries(MANIFEST.skills.map(s => [s.id, s]));
 const I18N = {
   zh:{search:"搜索 skill…",featured:"✨ 精选组合",all:"全部 skill",empty:"没有匹配的 skill",
       lock:"专有许可 · 不转载原文",view:"查看原文 ↗",random:"随机换一对",mode:"版本模式",
-      count:n=>`共 ${n} 个版本`,hint:"在时间轴上任选两个时间点即可对比;★ 为上游 tag 版本",
-      full:"全文可比",deg:"专有 · 仅摘要"},
+      count:n=>`共 ${n} 个版本`,hint:"点击时间轴上的圆点,更换两侧对比的时间点;★ 为上游 tag 版本",
+      full:"全文可比",deg:"专有 · 仅摘要",latest:"最新",times:"时间点",now:"最新"},
   en:{search:"Search skills…",featured:"✨ Featured pairs",all:"All skills",empty:"No matching skills",
       lock:"Proprietary license · original text not reproduced",view:"View source ↗",random:"Random pair",
       mode:"Version mode",count:n=>`${n} versions total`,
-      hint:"Pick any two points on the timeline to compare; ★ marks upstream tags",
-      full:"Full text",deg:"Proprietary · summary"}
+      hint:"Click dots on the timeline to switch either side's time point; ★ marks upstream tags",
+      full:"Full text",deg:"Proprietary · summary",latest:"Latest",times:"Time points",now:"Latest"}
 };
 /* ---------- 主题 ---------- */
 const THEMES = __THEME_LIST__;
-/* ---------- 状态 ---------- */
+/* ---------- 状态:槽位 = skill @ 时间点 ---------- */
 const q = new URLSearchParams(location.search);
 const state = {
   a: q.get("a") || (MANIFEST.skills[0] && MANIFEST.skills[0].id) || "",
   b: q.get("b") || (MANIFEST.skills[1] && MANIFEST.skills[1].id) || "",
-  va: parseInt(q.get("va") || "0", 10), vb: -1,
+  refA: q.get("ra") || "latest", refB: q.get("rb") || "latest",
   lang: localStorage.getItem("lang") || "zh",
   theme: q.get("theme") || localStorage.getItem("theme") || "tokyo-night",
-  picker: null,   // "a" | "b" | null
-  query: ""
+  picker: null, query: ""
 };
 const t = k => { const v = I18N[state.lang][k]; return typeof v === "function" ? v(0) : v; };
 const tf = (k, ...args) => { const v = I18N[state.lang][k]; return typeof v === "function" ? v(...args) : v; };
 
 function syncURL() {
   const p = new URLSearchParams({a: state.a, b: state.b, lang: state.lang, theme: state.theme});
-  if (isVersion()) { p.set("va", state.va); p.set("vb", state.vb); }
+  if (state.refA !== "latest") p.set("ra", state.refA);
+  if (state.refB !== "latest") p.set("rb", state.refB);
   history.replaceState(null, "", "?" + p.toString());
 }
 function isVersion() { return state.a && state.a === state.b; }
 function skill(id) { return BY[id] || null; }
-function setSlot(slot, id) { if (slot === "a") state.a = id; else state.b = id; if (!isVersion()) { state.va = 0; state.vb = -1; } syncURL(); render(); }
-function setLang(l) { state.lang = l; localStorage.setItem("lang", l); document.documentElement.lang = l === "zh" ? "zh" : "en"; syncURL(); render(); }
+function slotSkill(side) { return skill(side === "A" ? state.a : state.b); }
+function refIdx(s, ref) {
+  const n = (s.versions || []).length;
+  if (!n) return 0;
+  if (ref === "latest") return n - 1;
+  const i = parseInt(ref, 10);
+  return isNaN(i) ? n - 1 : Math.max(0, Math.min(n - 1, i));
+}
+function resolveV(side) {
+  const s = slotSkill(side); if (!s) return null;
+  return (s.versions || [])[refIdx(s, side === "A" ? state.refA : state.refB)] || null;
+}
+function refLabel(s, ref) {
+  if (ref === "latest" || s.versions.length < 2) return "";
+  const v = s.versions[refIdx(s, ref)];
+  return v.tags && v.tags.length ? "★" + v.tags.join(",") : v.date.slice(5) + " · " + v.sha.slice(0, 6);
+}
+function setSlot(side, id) {
+  const cur = side === "A" ? state.a : state.b;
+  if (cur !== id) { if (side === "A") { state.a = id; state.refA = "latest"; } else { state.b = id; state.refB = "latest"; } }
+  if (isVersion()) {
+    const s = skill(state.a), n = (s.versions || []).length;
+    if (refIdx(s, state.refA) === refIdx(s, state.refB)) { state.refA = 0; state.refB = "latest"; }
+  }
+  syncURL(); render();
+}
+function setTime(side, ref) {
+  if (side === "A") state.refA = ref; else state.refB = ref;
+  if (isVersion()) {
+    const s = skill(state.a);
+    if (refIdx(s, state.refA) === refIdx(s, state.refB)) {
+      if (ref === "latest") state.refA = 0; else state.refB = "latest";
+    }
+  }
+  syncURL(); render();
+}
+function setLang(l) { state.lang = l; localStorage.setItem("lang", l); syncURL(); render(); }
 function setTheme(th) { state.theme = th; localStorage.setItem("theme", th); document.documentElement.setAttribute("data-theme", th); syncURL(); }
 
 /* ---------- 图标 ---------- */
@@ -193,26 +228,28 @@ const IC = {
   gh:'<path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/>',
   lock:'<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
   info:'<circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>',
-  spark:'<path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3z"/>',
-  file:'<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/>',
+  spark:'<path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L21 12z"/>',
   hist:'<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>',
   check:'<path d="M20 6 9 17l-5-5"/>', arrowr:'<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',
-  star:'<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>'
+  clock:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>'
 };
 function icon(name, s, fill) {
-  const color = fill || "currentColor";
-  return `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none">${IC[name] || ""}</svg>`;
+  return `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="${fill || "currentColor"}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none">${IC[name] || ""}</svg>`;
 }
 
 /* ---------- 渲染 ---------- */
 let renderSeq = 0, monacoEd = null;
 const app = document.getElementById("app");
-
-function esc(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;"); }
+function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;"); }
 function fmt(n) { return n == null ? "—" : (n >= 1e6 ? (n / 1e6).toFixed(1) + "M" : n >= 1e3 ? (n / 1e3).toFixed(1) + "k" : String(n)); }
 function licBadge(lic) {
   const full = lic === "full";
   return `<span class="lic-badge ${full ? "full" : "deg"}">${esc(full ? t("full") : t("deg"))}</span>`;
+}
+function timeChip(s, ref) {
+  const lb = refLabel(s, ref);
+  if (!lb) return "";
+  return `<span class="timechip">${icon("clock", 10, "var(--dim)")}${esc(lb)}</span>`;
 }
 function topbar() {
   const opts = THEMES.map(th => `<option value="${th.id}" ${th.id === state.theme ? "selected" : ""}>${esc(th.label)}</option>`).join("");
@@ -228,28 +265,43 @@ function topbar() {
     </div></div>`;
 }
 function slotEl(side) {
-  const id = side === "A" ? state.a : state.b;
-  const s = skill(id);
+  const s = slotSkill(side);
   const color = side === "A" ? "var(--blue)" : "var(--purple)";
   const open = state.picker === side.toLowerCase();
   const warn = s && s.license_status === "degraded" ? `<span class="warn">${esc(t("deg"))}</span>` : "";
+  const chip = s ? timeChip(s, side === "A" ? state.refA : state.refB) : "";
   const inner = open
     ? `<span class="badge">${side}</span>${icon("search", 15, color)}
        <input id="picker-input" placeholder="${esc(t("search"))}" autocomplete="off">`
-    : `<span class="badge">${side}</span>${icon("search", 15, color)}
-       <span class="name">${esc(s ? s.name : "—")}</span>${warn}<span class="spacer"></span>${icon("chev", 16, color)}`;
+    : `<span class="badge">${side}</span>${icon(s && isVersion() ? "hist" : "search", 15, color)}
+       <span class="name">${esc(s ? s.name : "—")}</span>${chip}${warn}<span class="spacer"></span>${icon("chev", 16, color)}`;
   return `<div class="slot" data-side="${side}" data-slot="${side.toLowerCase()}">${inner}
     ${open ? pickerPanel(side) : ""}</div>`;
 }
 function pickerPanel(side) {
-  const q = state.query.toLowerCase();
-  const hits = MANIFEST.skills.filter(s => !q || s.name.toLowerCase().includes(q) || (s.desc || "").toLowerCase().includes(q));
+  const cur = slotSkill(side);
+  const qq = state.query.toLowerCase();
+  const hits = MANIFEST.skills.filter(s => !qq || s.name.toLowerCase().includes(qq) || (s.desc || "").toLowerCase().includes(qq));
   const feats = MANIFEST.featured.map(p =>
     `<div class="feat" data-feat="${esc(p.join(" "))}">${icon("spark", 12, "var(--orange)")}
      <span class="t">${esc(p.join(" × "))}</span>${icon("arrowr", 13, "var(--gutter)")}</div>`).join("");
+  let timeSec = "";
+  if (cur && (cur.versions || []).length >= 2) {
+    const ref = side === "A" ? state.refA : state.refB;
+    const curIdx = refIdx(cur, ref);
+    const rows = [{idx: "latest", label: `★ 最新 · ${cur.versions[cur.versions.length - 1].date}`}]
+      .concat(cur.versions.map((v, i) => ({idx: String(i),
+        label: (v.tags.length ? "★ " + v.tags.join(",") + " · " : "") + v.date + " · " + v.sha})).reverse());
+    timeSec = `<div class="divider"></div>
+      <div class="sec"><div class="sec-label">${esc(tf ? t("times") : "时间点")} · ${esc(cur.name)}${icon("hist", 11, "var(--faint)")}</div>
+      ${rows.map(r => `<div class="row trow ${String(curIdx) === r.idx ? "sel" : ""}" data-time="${r.idx}">
+        <span class="nm">${esc(r.label)}</span><span class="spacer"></span>
+        ${String(curIdx) === r.idx ? icon("check", 13, "var(--blue)") : ""}</div>`).join("")}</div>
+      <div class="divider"></div>`;
+  }
   const rows = hits.map(s => {
     const sel = s.id === state.a || s.id === state.b;
-    return `<div class="row ${sel ? "sel" : ""}" data-pick="${esc(s.id)}">
+    return `<div class="row" data-pick="${esc(s.id)}">
       ${sel ? `<span class="selbar"></span>` : ""}
       <span class="nm">${esc(s.name)}</span>${licBadge(s.license_status)}
       <span class="spacer"></span><span class="meta">${esc(s.source)}</span>
@@ -259,6 +311,7 @@ function pickerPanel(side) {
   return `<div class="picker" data-stop="1">
     <div class="sec"><div class="sec-label">${esc(t("featured"))}</div>${feats}</div>
     <div class="divider"></div>
+    ${timeSec}
     <div class="sec"><div class="sec-label">${esc(t("all"))} · ${MANIFEST.skills.length}</div>
     ${rows || `<div class="empty">${esc(t("empty"))}</div>`}</div></div>`;
 }
@@ -266,108 +319,89 @@ function timelineEl(sk) {
   const vs = sk.versions || [];
   const n = vs.length;
   if (n < 2) return "";
+  const ia = refIdx(sk, state.refA), ib = refIdx(sk, state.refB);
   const pos = i => (n === 1 ? 50 : (i / (n - 1)) * 100);
   const dots = vs.map((v, i) => {
-    const cls = i === state.va ? "sel-a" : (i === state.vb ? "sel-b" : "");
+    const cls = i === ia ? "sel-a" : (i === ib ? "sel-b" : "");
     const star = v.tags && v.tags.length ? " ★" : "";
-    return `<button class="t-dot ${cls}" data-va="${i}" style="left:${pos(i)}%" title="${esc(v.date + " · " + v.sha + star)}"></button>`;
+    return `<button class="t-dot ${cls}" data-dot="${i}" style="left:${pos(i)}%" title="${esc(v.date + " · " + v.sha + star)}"></button>`;
   }).join("");
-  const flagA = vs[state.va] && vs[state.va].tags && vs[state.va].tags.length
-    ? `<span class="flag t-flag-a">★ ${esc(vs[state.va].tags.join(", "))}</span>` : `<span></span>`;
-  const flagB = vs[state.vb] && vs[state.vb].tags && vs[state.vb].tags.length
-    ? `<span class="flag t-flag-b">★ ${esc(vs[state.vb].tags.join(", "))}</span>` : `<span></span>`;
+  const flag = (i, cls) => vs[i] && vs[i].tags && vs[i].tags.length
+    ? `<span class="flag ${cls}">★ ${esc(vs[i].tags.join(", "))}</span>` : `<span></span>`;
   return `<div class="timeline">
-    <div class="t-flags" style="justify-content:space-between;padding:0 30px">${flagA}${flagB}</div>
+    <div class="t-flags" style="justify-content:space-between;padding:0 30px">${flag(ia, "t-flag-a")}${flag(ib, "t-flag-b")}</div>
     <div class="t-rail"><div class="line"></div>${dots}</div>
-    <div class="t-dates"><span class="da">${esc(vs[state.va].date + " · " + vs[state.va].sha)}</span>
-    <span class="db">${esc(vs[state.vb].date + " · " + vs[state.vb].sha)}</span></div></div>`;
-}
-function versionConsole(sk) {
-  return `<div class="mode-row"><div class="mode-left">
-      <span class="mode-pill">${esc(t("mode"))}</span>
-      <span class="mode-name">${esc(sk.name)}</span>
-      <span class="mode-count">${esc(tf("count", sk.versions.length))}</span></div>
-    <span class="mode-count">${esc(t("hint"))}</span></div>
-    <div class="console" style="padding-top:12px">
-      ${slotEl("A")}
-      <div class="swap" data-act="swap">${icon("swap", 16, "var(--dim)")}</div>
-      ${slotEl("B")}</div>
-    ${timelineEl(sk)}`;
-}
-function versionText(slot) {
-  const sk = skill(state.a); if (!sk) return "";
-  const v = sk.versions[slot === "a" ? state.va : state.vb] || sk.versions[0];
-  return v ? `${v.date} · ${v.sha}` : "";
-}
-/* 版本模式槽位显示时间点文本 */
-function slotDisplayFix() {
-  if (!isVersion()) return;
-  document.querySelectorAll(".slot").forEach(el => {
-    const side = el.getAttribute("data-side");
-    const sk = skill(state.a); if (!sk) return;
-    const v = sk.versions[side === "A" ? state.va : state.vb];
-    const nm = el.querySelector(".name");
-    if (nm && v) nm.textContent = `${v.date} · ${v.sha}`;
-  });
+    <div class="t-dates"><span class="da">${esc(vs[ia].date + " · " + vs[ia].sha)}</span>
+    <span class="db">${esc(vs[ib].date + " · " + vs[ib].sha)}</span></div></div>`;
 }
 function render() {
   renderSeq++;
   document.documentElement.setAttribute("data-theme", state.theme);
   document.documentElement.lang = state.lang === "zh" ? "zh" : "en";
   const A = skill(state.a), B = skill(state.b);
-  const version = isVersion() && A && (A.versions || []).length >= 1;
+  const version = isVersion() && A && (A.versions || []).length >= 2;
   const consoleHtml = version && A
-    ? versionConsole(A)
-    : `<div class="console">${slotEl("A")}<div class="swap" data-act="swap">${icon("swap", 16, "var(--dim)")}</div>${slotEl("B")}</div>`;  let bodyHtml;
-  if (!A || !B) bodyHtml = `<div class="diffbody"><div class="diffbody" style="justify-content:center;color:var(--faint)">—</div></div>`;
+    ? `<div class="mode-row"><div class="mode-left">
+        <span class="mode-pill">${esc(t("mode"))}</span>
+        <span class="mode-name">${esc(A.name)}</span>
+        <span class="mode-count">${esc(tf("count", A.versions.length))}</span></div>
+      <span class="mode-count">${esc(t("hint"))}</span></div>` + consoleBase()
+    : consoleBase();
+  let bodyHtml;
+  if (!A || !B) bodyHtml = `<div class="diffbody"></div>`;
   else if (A.license_status === "full" && B.license_status === "full")
     bodyHtml = `<div class="diffbody"><div id="monaco" style="width:100%"></div></div>`;
   else {
     const pane = (s, fp) => s.license_status === "full"
-      ? `<div class="diffcol" data-body="${fp}"></div>`
-      : `<div class="lockcol"><div class="lockcol-circle" style="width:46px;height:46px;border-radius:23px;background:var(--orange-bg);display:flex;align-items:center;justify-content:center">
-         ${icon("lock", 20, "var(--orange)")}</div>
+      ? `<div class="diffcol" data-fp="${fp}"></div>`
+      : `<div class="lockcol"><div class="circle">${icon("lock", 20, "var(--orange)")}</div>
          <div class="note">${esc(t("lock"))}</div>
          <button class="ghost" data-src="${esc(s.url)}">${esc(t("view"))}</button></div>`;
-    bodyHtml = `<div class="diffbody">${pane(A, A.fp)}${pane(B, B.fp)}</div>`;
+    const va = resolveV("A"), vb = resolveV("B");
+    bodyHtml = `<div class="diffbody">${pane(A, va ? va.fp : "")}${pane(B, vb ? vb.fp : "")}</div>`;
   }
+  const headName = (side) => {
+    const s = slotSkill(side); if (!s) return "—";
+    const lb = refLabel(s, side === "A" ? state.refA : state.refB);
+    return lb ? `${s.name} @ ${lb}` : s.name;
+  };
   const heads = (A && B) ? `<div class="colheads">
     <div class="colhead" data-side="A"><div class="accent a"></div>
       <div class="in"><span class="dot" style="background:var(--blue)"></span>
-      <span class="nm">${esc(version ? versionText("a") : A.name)}</span></div></div>
+      <span class="nm">${esc(headName("A"))}</span></div></div>
     <div class="colhead" data-side="B"><div class="accent b"></div>
       <div class="in"><span class="dot" style="background:var(--purple)"></span>
-      <span class="nm">${esc(version && A === B ? versionText("b") : B.name)}</span></div></div></div>` : "";
-  app.innerHTML = topbar() + consoleHtml +
+      <span class="nm">${esc(headName("B"))}</span></div></div></div>` : "";
+  app.innerHTML = topbar() + (version ? "" : "") + consoleHtml +
     `<div class="hero-wrap"><div class="hero">${heads}${bodyHtml}</div></div>`;
   bind();
   mountDiff();
-  slotDisplayFix();
+}
+function consoleBase() {
+  return `<div class="console">${slotEl("A")}<div class="swap" data-act="swap">${icon("swap", 16, "var(--dim)")}</div>${slotEl("B")}</div>`;
 }
 /* ---------- diff 挂载 ---------- */
 const bodyCache = new Map();
 function fetchBody(fp) {
+  if (!fp) return Promise.resolve("");
   if (bodyCache.has(fp)) return bodyCache.get(fp);
   const p = fetch("bodies/" + fp + ".md").then(r => r.ok ? r.text() : "");
   bodyCache.set(fp, p); return p;
 }
 function mountDiff() {
-  const A = skill(state.a), B = skill(state.b);
-  if (!A || !B) return;
+  const va = resolveV("A"), vb = resolveV("B");
+  if (!va || !vb) return;
   const my = renderSeq;
+  const A = skill(state.a), B = skill(state.b);
   if (A.license_status === "full" && B.license_status === "full") {
-    Promise.all([fetchBody(A.fp), fetchBody(B.fp)]).then(([ta, tb]) => {
+    Promise.all([fetchBody(va.fp), fetchBody(vb.fp)]).then(([ta, tb]) => {
       if (my !== renderSeq) return;
       initMonaco(ta, tb, my);
     });
   } else {
-    // 降级/混合:有正文的一侧填充文本
-    document.querySelectorAll(".diffcol[data-body]").forEach(el => {
-      const s = el.getAttribute("data-body") === A.fp ? A : B;
-      fetchBody(el.getAttribute("data-body")).then(txt => {
-        if (my !== renderSeq) return;
-        el.innerHTML = rowsHtml(txt);
-      });
+    document.querySelectorAll(".diffcol[data-fp]").forEach(el => {
+      const fp = el.getAttribute("data-fp");
+      fetchBody(fp).then(txt => { if (my === renderSeq) el.innerHTML = rowsHtml(txt); });
     });
   }
 }
@@ -406,30 +440,31 @@ function bind() {
     const act = el.getAttribute("data-act");
     if (act === "lang-zh") el.onclick = () => setLang("zh");
     if (act === "lang-en") el.onclick = () => setLang("en");
-    if (act === "theme") el.onchange = e => setTheme(e.target.value);
+    if (act === "theme") { el.value = state.theme; el.onchange = e => setTheme(e.target.value); }
     if (act === "swap") el.onclick = () => { [state.a, state.b] = [state.b, state.a];
-      [state.va, state.vb] = [state.vb, state.va]; syncURL(); render(); };
+      [state.refA, state.refB] = [state.refB, state.refA]; syncURL(); render(); };
   });
-  const themeSel = app.querySelector('[data-act="theme"]');
-  if (themeSel) themeSel.value = state.theme;
   app.querySelectorAll(".slot").forEach(el => {
-    if (el.querySelector("input")) {
-      const inp = el.querySelector("input");
+    const side = el.getAttribute("data-slot");
+    const inp = el.querySelector("input");
+    if (inp) {
       inp.value = state.query; inp.focus();
       inp.setSelectionRange(inp.value.length, inp.value.length);
       inp.oninput = () => { state.query = inp.value; render(); };
       inp.onkeydown = e => { if (e.key === "Escape") { state.picker = null; state.query = ""; render(); } };
     } else {
       el.onclick = e => { if (e.target.closest(".picker")) return;
-        state.picker = el.getAttribute("data-slot"); state.query = ""; render(); };
+        state.picker = side; state.query = ""; render(); };
     }
     const pk = el.querySelector(".picker");
     if (pk) {
       pk.onclick = e => e.stopPropagation();
-      pk.querySelectorAll("[data-pick]").forEach(r => r.onclick = () => setSlot(state.picker, r.getAttribute("data-pick")));
+      pk.querySelectorAll("[data-pick]").forEach(r => r.onclick = () => setSlot(side, r.getAttribute("data-pick")));
+      pk.querySelectorAll("[data-time]").forEach(r => r.onclick = () => setTime(side, r.getAttribute("data-time")));
       pk.querySelectorAll("[data-feat]").forEach(r => r.onclick = () => {
         const [x, y] = r.getAttribute("data-feat").split(" ");
-        state.a = x; state.b = y; state.va = 0; state.vb = -1; state.picker = null; syncURL(); render();
+        state.a = x; state.b = y; state.refA = "latest"; state.refB = "latest";
+        state.picker = null; syncURL(); render();
       });
     }
   });
@@ -439,15 +474,15 @@ function bind() {
     }
   };
   app.querySelectorAll(".t-dot").forEach(d => d.onclick = () => {
-    const i = parseInt(d.getAttribute("data-va"), 10);
-    if (state.va === state.vb) { if (i !== state.va) state.vb = i; }
-    else { state.va = i; }
-    syncURL(); render();
+    const i = String(parseInt(d.getAttribute("data-dot"), 10));
+    if (i === String(refIdx(skill(state.a), state.refA))) setTime("B", "latest");
+    else setTime("B", i);
   });
   app.querySelectorAll("[data-src]").forEach(b => b.onclick = () => window.open(b.getAttribute("data-src"), "_blank"));
 }
 document.documentElement.setAttribute("data-theme", state.theme);
 render();
+
 </script>
 </body>
 </html>
