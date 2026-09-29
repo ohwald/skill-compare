@@ -1,6 +1,6 @@
 {
- "generated": "2026-09-29 06:31 UTC",
- "count": 63,
+ "generated": "2026-09-29 06:40 UTC",
+ "count": 76,
  "skills": [
   {
    "id": "academy-guide",
@@ -28,6 +28,7 @@
      "tags": []
     }
    ],
+   "name_conflicts": [],
    "versions_count": 1
   },
   {
@@ -56,6 +57,7 @@
      "tags": []
     }
    ],
+   "name_conflicts": [],
    "versions_count": 1
   },
   {
@@ -84,6 +86,7 @@
      "tags": []
     }
    ],
+   "name_conflicts": [],
    "versions_count": 1
   },
   {
@@ -112,6 +115,7 @@
      "tags": []
     }
    ],
+   "name_conflicts": [],
    "versions_count": 1
   },
   {
@@ -294,6 +298,7 @@
      "tags": []
     }
    ],
+   "name_conflicts": [],
    "versions_count": 23
   },
   {
@@ -322,6 +327,7 @@
      "tags": []
     }
    ],
+   "name_conflicts": [],
    "versions_count": 1
   },
   {
@@ -350,6 +356,7 @@
      "tags": []
     }
    ],
+   "name_conflicts": [],
    "versions_count": 1
   },
   {
@@ -399,6 +406,7 @@
      "tags": []
     }
    ],
+   "name_conflicts": [],
    "versions_count": 4
   },
   {
@@ -448,6 +456,7 @@
      "tags": []
     }
    ],
+   "name_conflicts": [],
    "versions_count": 4
   },
   {
@@ -476,6 +485,7 @@
      "tags": []
     }
    ],
+   "name_conflicts": [],
    "versions_count": 1
   },
   {
@@ -504,6 +514,7 @@
      "tags": []
     }
    ],
+   "name_conflicts": [],
    "versions_count": 1
   },
   {
@@ -539,6 +550,7 @@
      "tags": []
     }
    ],
+   "name_conflicts": [],
    "versions_count": 2
   },
   {
@@ -581,6 +593,7 @@
      "tags": []
     }
    ],
+   "name_conflicts": [],
    "versions_count": 3
   },
   {
@@ -630,6 +643,7 @@
      "tags": []
     }
    ],
+   "name_conflicts": [],
    "versions_count": 4
   },
   {
@@ -658,6 +672,7 @@
      "tags": []
     }
    ],
+   "name_conflicts": [],
    "versions_count": 1
   },
   {
@@ -686,6 +701,7 @@
      "tags": []
     }
    ],
+   "name_conflicts": [],
    "versions_count": 1
   },
   {
@@ -714,6 +730,7 @@
      "tags": []
     }
    ],
+   "name_conflicts": [],
    "versions_count": 1
   },
   {
@@ -742,6 +759,7 @@
      "tags": []
     }
    ],
+   "name_conflicts": [],
    "versions_count": 1
   },
   {
@@ -784,6 +802,631 @@
      "tags": []
     }
    ],
+   "name_conflicts": [],
+   "versions_count": 3
+  },
+  {
+   "id": "animate",
+   "name": "animate",
+   "desc": "Build an animation from scratch, making the decisions in the order that determines whether it feels right — should it animate at all, what purpose, which tool, which properties, which curve and duration, how it interrupts, how it exits. Writes the implementation. Use when asked to animate something, add motion, make a component feel alive, or build a transition. For critiquing existing motion use review-animations; for auditing a whole codebase use improve-animations.",
+   "source": "emilkowalski/skills",
+   "source_id": "emilkowalski",
+   "license": "repo LICENSE",
+   "license_status": "full",
+   "stars": null,
+   "installs": 103390,
+   "category": null,
+   "lines": 208,
+   "tokens": 2944,
+   "fp": "b8ede161270458e6",
+   "also_seen": [],
+   "url": "https://github.com/emilkowalski/skills/tree/main/skills/animate",
+   "rel_path": "skills/animate/SKILL.md",
+   "versions": [
+    {
+     "sha": "de33dbed00",
+     "date": "2026-08-05",
+     "fp": "2a99870e61971553",
+     "lines": 200,
+     "tags": []
+    },
+    {
+     "sha": "e879241fab",
+     "date": "2026-08-18",
+     "fp": "f6317335da2662e9",
+     "lines": 200,
+     "tags": []
+    },
+    {
+     "sha": "0b85d4b36a",
+     "date": "2026-09-15",
+     "fp": "9d04cade7c434643",
+     "lines": 208,
+     "tags": []
+    },
+    {
+     "sha": "85e8e2363b",
+     "date": "2026-09-15",
+     "fp": "b8ede161270458e6",
+     "lines": 208,
+     "tags": []
+    }
+   ],
+   "name_conflicts": [],
+   "versions_count": 4
+  },
+  {
+   "id": "animate-expo",
+   "name": "animate-expo",
+   "desc": "Build animations in React Native and Expo, making the decisions in the order that determines whether they feel right — should it animate, which thread it runs on, which properties, spring or timing, how the gesture hands off, how it degrades. Writes the implementation with Reanimated, Gesture Handler, Expo Router and expo-haptics. Use when animating anything in an Expo app, adding gestures, sheets, screen transitions, press feedback or haptics, or fixing motion that stutters on device. For web animation use `animate`.",
+   "source": "emilkowalski/skills",
+   "source_id": "emilkowalski",
+   "license": "repo LICENSE",
+   "license_status": "full",
+   "stars": null,
+   "installs": 70410,
+   "category": null,
+   "lines": 264,
+   "tokens": 4446,
+   "fp": "9a01a91701e6563c",
+   "also_seen": [],
+   "url": "https://github.com/emilkowalski/skills/tree/main/skills/animate-expo",
+   "rel_path": "skills/animate-expo/SKILL.md",
+   "versions": [
+    {
+     "sha": "e879241fab",
+     "date": "2026-08-18",
+     "fp": "2121fc72ffa47649",
+     "lines": 256,
+     "tags": []
+    },
+    {
+     "sha": "0b85d4b36a",
+     "date": "2026-09-15",
+     "fp": "888799bb42ae9921",
+     "lines": 264,
+     "tags": []
+    },
+    {
+     "sha": "85e8e2363b",
+     "date": "2026-09-15",
+     "fp": "9a01a91701e6563c",
+     "lines": 264,
+     "tags": []
+    }
+   ],
+   "name_conflicts": [],
+   "versions_count": 3
+  },
+  {
+   "id": "animation-vocabulary",
+   "name": "animation-vocabulary",
+   "desc": "Reverse-lookup glossary that turns a vague description of a web animation or motion effect into its exact term (\"the bouncy thing when a popover opens\" → Pop in; \"the iOS rubber-band scroll\" → Rubber-banding). Use when the user asks \"what's it called when…\", or describes a motion effect without knowing its name and wants the right word to prompt an AI or designer with. For naming an effect, not designing or building one.",
+   "source": "emilkowalski/skills",
+   "source_id": "emilkowalski",
+   "license": "repo LICENSE",
+   "license_status": "full",
+   "stars": null,
+   "installs": 172935,
+   "category": null,
+   "lines": 182,
+   "tokens": 3295,
+   "fp": "40d2b27adfdfeb05",
+   "also_seen": [],
+   "url": "https://github.com/emilkowalski/skills/tree/main/skills/animation-vocabulary",
+   "rel_path": "skills/animation-vocabulary/SKILL.md",
+   "versions": [
+    {
+     "sha": "107aeda7d9",
+     "date": "2026-06-29",
+     "fp": "d718b48fe3c78988",
+     "lines": 174,
+     "tags": []
+    },
+    {
+     "sha": "0b85d4b36a",
+     "date": "2026-09-15",
+     "fp": "dcb9963b914bb1c4",
+     "lines": 182,
+     "tags": []
+    },
+    {
+     "sha": "85e8e2363b",
+     "date": "2026-09-15",
+     "fp": "40d2b27adfdfeb05",
+     "lines": 182,
+     "tags": []
+    }
+   ],
+   "name_conflicts": [],
+   "versions_count": 3
+  },
+  {
+   "id": "apple-design",
+   "name": "apple-design",
+   "desc": "Apple's approach to interface design and fluid, physical motion, translated for the web. Use when building or reviewing gesture-driven UI, spring animations, drag/swipe/sheet interactions, momentum and interruptible transitions, translucent materials and depth, typography (optical sizing, tracking, leading), reduced-motion, or the design foundations (feedback, spatial consistency, restraint) behind Apple-style interfaces.",
+   "source": "emilkowalski/skills",
+   "source_id": "emilkowalski",
+   "license": "repo LICENSE",
+   "license_status": "full",
+   "stars": null,
+   "installs": 170678,
+   "category": null,
+   "lines": 291,
+   "tokens": 5720,
+   "fp": "77bb63b7043bb93a",
+   "also_seen": [],
+   "url": "https://github.com/emilkowalski/skills/tree/main/skills/apple-design",
+   "rel_path": "skills/apple-design/SKILL.md",
+   "versions": [
+    {
+     "sha": "df49b5dcbe",
+     "date": "2026-07-09",
+     "fp": "b9cf476b09bd133f",
+     "lines": 256,
+     "tags": []
+    },
+    {
+     "sha": "06b7fa0b37",
+     "date": "2026-07-09",
+     "fp": "de8c480bbcfaa273",
+     "lines": 256,
+     "tags": []
+    },
+    {
+     "sha": "e5de0afb1a",
+     "date": "2026-07-09",
+     "fp": "28b5541dd73b64e2",
+     "lines": 278,
+     "tags": []
+    },
+    {
+     "sha": "56de6f5d66",
+     "date": "2026-07-09",
+     "fp": "11840b24a11d7f94",
+     "lines": 283,
+     "tags": []
+    },
+    {
+     "sha": "0b85d4b36a",
+     "date": "2026-09-15",
+     "fp": "9a0f5b70d405a715",
+     "lines": 291,
+     "tags": []
+    },
+    {
+     "sha": "85e8e2363b",
+     "date": "2026-09-15",
+     "fp": "77bb63b7043bb93a",
+     "lines": 291,
+     "tags": []
+    }
+   ],
+   "name_conflicts": [],
+   "versions_count": 6
+  },
+  {
+   "id": "ask-sonner",
+   "name": "ask-sonner",
+   "desc": "Guide to Sonner, the React toast library — install and wire up the Toaster, pick the right toast() call, promise and loading toasts, updating, dismissing and persisting toasts, styling, theming and icons, positioning and multiple toasters. Use when working with Sonner or troubleshooting it — toasts that don't appear, appear twice, lose their styles, ignore Tailwind classes, sit behind a modal, or don't follow dark mode.",
+   "source": "emilkowalski/skills",
+   "source_id": "emilkowalski",
+   "license": "repo LICENSE",
+   "license_status": "full",
+   "stars": null,
+   "installs": 82280,
+   "category": null,
+   "lines": 89,
+   "tokens": 1786,
+   "fp": "39f3ee185b3aa2cf",
+   "also_seen": [],
+   "url": "https://github.com/emilkowalski/skills/tree/main/skills/ask-sonner",
+   "rel_path": "skills/ask-sonner/SKILL.md",
+   "versions": [
+    {
+     "sha": "e48aeea9b5",
+     "date": "2026-08-10",
+     "fp": "be1b04511aadb4d7",
+     "lines": 81,
+     "tags": []
+    },
+    {
+     "sha": "0b85d4b36a",
+     "date": "2026-09-15",
+     "fp": "e5d4b5f126bc0d05",
+     "lines": 89,
+     "tags": []
+    },
+    {
+     "sha": "85e8e2363b",
+     "date": "2026-09-15",
+     "fp": "39f3ee185b3aa2cf",
+     "lines": 89,
+     "tags": []
+    }
+   ],
+   "name_conflicts": [],
+   "versions_count": 3
+  },
+  {
+   "id": "emil-design-eng",
+   "name": "emil-design-eng",
+   "desc": "This skill encodes Emil Kowalski's philosophy on UI polish, component design, animation decisions, and the invisible details that make software feel great.",
+   "source": "emilkowalski/skills",
+   "source_id": "emilkowalski",
+   "license": "repo LICENSE",
+   "license_status": "full",
+   "stars": null,
+   "installs": 305607,
+   "category": null,
+   "lines": 675,
+   "tokens": 6757,
+   "fp": "ffbe68e6007fb42c",
+   "also_seen": [],
+   "url": "https://github.com/emilkowalski/skills/tree/main/skills/emil-design-eng",
+   "rel_path": "skills/emil-design-eng/SKILL.md",
+   "versions": [
+    {
+     "sha": "5282ea890d",
+     "date": "2026-03-16",
+     "fp": "1adef1b8f65f92df",
+     "lines": 672,
+     "tags": []
+    },
+    {
+     "sha": "e7442c9d56",
+     "date": "2026-03-25",
+     "fp": "c77c336b79a93210",
+     "lines": 680,
+     "tags": []
+    },
+    {
+     "sha": "ecf66bbd1f",
+     "date": "2026-03-25",
+     "fp": "433b5a239cda18e0",
+     "lines": 680,
+     "tags": []
+    },
+    {
+     "sha": "86cf9f7d91",
+     "date": "2026-07-21",
+     "fp": "e71de849347050c2",
+     "lines": 675,
+     "tags": []
+    },
+    {
+     "sha": "85e8e2363b",
+     "date": "2026-09-15",
+     "fp": "ffbe68e6007fb42c",
+     "lines": 675,
+     "tags": []
+    }
+   ],
+   "name_conflicts": [],
+   "versions_count": 5
+  },
+  {
+   "id": "find-animation-opportunities",
+   "name": "find-animation-opportunities",
+   "desc": "Search a codebase or UI for places that don't animate but should, and reject everything that shouldn't. Read-only; it proposes motion with exact values, it does not implement it. Use when the user asks \"what could be animated here?\" or wants to \"make this feel more alive\". For fixing existing animations, use improve-animations or review-animations instead.",
+   "source": "emilkowalski/skills",
+   "source_id": "emilkowalski",
+   "license": "repo LICENSE",
+   "license_status": "full",
+   "stars": null,
+   "installs": 143314,
+   "category": null,
+   "lines": 141,
+   "tokens": 2427,
+   "fp": "d52a377819b84a71",
+   "also_seen": [],
+   "url": "https://github.com/emilkowalski/skills/tree/main/skills/find-animation-opportunities",
+   "rel_path": "skills/find-animation-opportunities/SKILL.md",
+   "versions": [
+    {
+     "sha": "d62b0d8f9a",
+     "date": "2026-07-15",
+     "fp": "3d6533767ebcf4fb",
+     "lines": 133,
+     "tags": []
+    },
+    {
+     "sha": "86cf9f7d91",
+     "date": "2026-07-21",
+     "fp": "91c1243164057fbf",
+     "lines": 133,
+     "tags": []
+    },
+    {
+     "sha": "0b85d4b36a",
+     "date": "2026-09-15",
+     "fp": "76f754f616c0344c",
+     "lines": 141,
+     "tags": []
+    },
+    {
+     "sha": "85e8e2363b",
+     "date": "2026-09-15",
+     "fp": "d52a377819b84a71",
+     "lines": 141,
+     "tags": []
+    }
+   ],
+   "name_conflicts": [],
+   "versions_count": 4
+  },
+  {
+   "id": "improve-animations",
+   "name": "improve-animations",
+   "desc": "Survey a codebase's animation and motion code as a senior motion advisor, then produce a prioritized audit and self-contained implementation plans for other agents (or cheaper models) to execute. Read-only on source code — it plans improvements, it does not apply them. Use when the user asks to \"improve the animations\", \"audit the motion\", \"make this app feel better\", or wants a roadmap of animation fixes rather than a review of a single diff.",
+   "source": "emilkowalski/skills",
+   "source_id": "emilkowalski",
+   "license": "repo LICENSE",
+   "license_status": "full",
+   "stars": null,
+   "installs": 156911,
+   "category": null,
+   "lines": 110,
+   "tokens": 2036,
+   "fp": "7396244746443347",
+   "also_seen": [],
+   "url": "https://github.com/emilkowalski/skills/tree/main/skills/improve-animations",
+   "rel_path": "skills/improve-animations/SKILL.md",
+   "versions": [
+    {
+     "sha": "f736679c42",
+     "date": "2026-07-11",
+     "fp": "68f17bbc4671593d",
+     "lines": 102,
+     "tags": []
+    },
+    {
+     "sha": "0b85d4b36a",
+     "date": "2026-09-15",
+     "fp": "1c6921e3a9742c36",
+     "lines": 110,
+     "tags": []
+    },
+    {
+     "sha": "85e8e2363b",
+     "date": "2026-09-15",
+     "fp": "7396244746443347",
+     "lines": 110,
+     "tags": []
+    }
+   ],
+   "name_conflicts": [],
+   "versions_count": 3
+  },
+  {
+   "id": "mobile-native",
+   "name": "mobile-native",
+   "desc": "Make a web app feel native on a phone — the small CSS and meta-tag fixes that separate \"a website in a browser\" from something that feels installed. Covers sticky hover states, tap highlight flashes, the 100vh bug, inputs that zoom the page, laggy taps, pull-to-refresh hijacking scroll, content under the notch, long-press selecting button text, carousels that scroll the wrong way, mismatched status bars, and the rule that you test on real hardware. Use when a web app is being built for or reviewed on mobile, when something \"works in Chrome but feels wrong on my phone\", when building a PWA, a bottom sheet, a carousel, a full-screen layout, or any touch interaction. For motion itself use animate; for React Native use animate-expo.",
+   "source": "emilkowalski/skills",
+   "source_id": "emilkowalski",
+   "license": "repo LICENSE",
+   "license_status": "full",
+   "stars": null,
+   "installs": 23940,
+   "category": null,
+   "lines": 312,
+   "tokens": 4196,
+   "fp": "888b7651d66d66db",
+   "also_seen": [],
+   "url": "https://github.com/emilkowalski/skills/tree/main/skills/mobile-native",
+   "rel_path": "skills/mobile-native/SKILL.md",
+   "versions": [
+    {
+     "sha": "0b85d4b36a",
+     "date": "2026-09-15",
+     "fp": "319bcd59c2d8c5be",
+     "lines": 312,
+     "tags": []
+    },
+    {
+     "sha": "85e8e2363b",
+     "date": "2026-09-15",
+     "fp": "888b7651d66d66db",
+     "lines": 312,
+     "tags": []
+    }
+   ],
+   "name_conflicts": [],
+   "versions_count": 2
+  },
+  {
+   "id": "pick-ui-library",
+   "name": "pick-ui-library",
+   "desc": "Pick the right library for a given frontend task from a curated, opinionated list — numbers, OTP inputs, charts, command menus, virtualization, drag and drop, toasts, state, styling, and more. Only runs when explicitly invoked; it does not trigger on its own.",
+   "source": "emilkowalski/skills",
+   "source_id": "emilkowalski",
+   "license": "repo LICENSE",
+   "license_status": "full",
+   "stars": null,
+   "installs": 124480,
+   "category": null,
+   "lines": 86,
+   "tokens": 1190,
+   "fp": "675fdce308683256",
+   "also_seen": [],
+   "url": "https://github.com/emilkowalski/skills/tree/main/skills/pick-ui-library",
+   "rel_path": "skills/pick-ui-library/SKILL.md",
+   "versions": [
+    {
+     "sha": "049c92e3ed",
+     "date": "2026-07-21",
+     "fp": "f54c2e3971cdecfe",
+     "lines": 78,
+     "tags": []
+    },
+    {
+     "sha": "f6f79ca1d8",
+     "date": "2026-07-21",
+     "fp": "4b889bd6c0835849",
+     "lines": 78,
+     "tags": []
+    },
+    {
+     "sha": "0b85d4b36a",
+     "date": "2026-09-15",
+     "fp": "1608980997ce4684",
+     "lines": 86,
+     "tags": []
+    },
+    {
+     "sha": "85e8e2363b",
+     "date": "2026-09-15",
+     "fp": "675fdce308683256",
+     "lines": 86,
+     "tags": []
+    }
+   ],
+   "name_conflicts": [],
+   "versions_count": 4
+  },
+  {
+   "id": "prototype--emilkowalski",
+   "name": "prototype",
+   "desc": "Build multiple genuinely different versions of a UI piece you describe, rendered behind a visual picker so you can flip through them live and promote the one that feels right. Only runs when explicitly invoked; it does not trigger on its own.",
+   "source": "emilkowalski/skills",
+   "source_id": "emilkowalski",
+   "license": "repo LICENSE",
+   "license_status": "full",
+   "stars": null,
+   "installs": 113499,
+   "category": null,
+   "lines": 99,
+   "tokens": 1943,
+   "fp": "bba39c955eb1871c",
+   "also_seen": [],
+   "url": "https://github.com/emilkowalski/skills/tree/main/skills/prototype",
+   "rel_path": "skills/prototype/SKILL.md",
+   "versions": [
+    {
+     "sha": "70744e3816",
+     "date": "2026-07-27",
+     "fp": "2ad8401c4deaddb5",
+     "lines": 91,
+     "tags": []
+    },
+    {
+     "sha": "0b85d4b36a",
+     "date": "2026-09-15",
+     "fp": "77cd43278e8806aa",
+     "lines": 99,
+     "tags": []
+    },
+    {
+     "sha": "85e8e2363b",
+     "date": "2026-09-15",
+     "fp": "bba39c955eb1871c",
+     "lines": 99,
+     "tags": []
+    }
+   ],
+   "name_conflicts": [
+    "prototype"
+   ],
+   "versions_count": 3
+  },
+  {
+   "id": "review-animations",
+   "name": "review-animations",
+   "desc": "Reviews animation and motion code against a high craft bar derived from Emil Kowalski's design engineering philosophy. Default to flagging; approval is earned.",
+   "source": "emilkowalski/skills",
+   "source_id": "emilkowalski",
+   "license": "repo LICENSE",
+   "license_status": "full",
+   "stars": null,
+   "installs": 185479,
+   "category": null,
+   "lines": 121,
+   "tokens": 2084,
+   "fp": "6ff590d29e436766",
+   "also_seen": [],
+   "url": "https://github.com/emilkowalski/skills/tree/main/skills/review-animations",
+   "rel_path": "skills/review-animations/SKILL.md",
+   "versions": [
+    {
+     "sha": "47226d9d54",
+     "date": "2026-06-18",
+     "fp": "da7ffae44f21bc8c",
+     "lines": 113,
+     "tags": []
+    },
+    {
+     "sha": "f736679c42",
+     "date": "2026-07-11",
+     "fp": "27c1ec78634a08bc",
+     "lines": 113,
+     "tags": []
+    },
+    {
+     "sha": "86cf9f7d91",
+     "date": "2026-07-21",
+     "fp": "61cf8ac0c4c8e1f6",
+     "lines": 113,
+     "tags": []
+    },
+    {
+     "sha": "0b85d4b36a",
+     "date": "2026-09-15",
+     "fp": "2f95145e07a8f760",
+     "lines": 121,
+     "tags": []
+    },
+    {
+     "sha": "85e8e2363b",
+     "date": "2026-09-15",
+     "fp": "6ff590d29e436766",
+     "lines": 121,
+     "tags": []
+    }
+   ],
+   "name_conflicts": [],
+   "versions_count": 5
+  },
+  {
+   "id": "write-swift",
+   "name": "write-swift",
+   "desc": "How to write modern Swift well — modeling with value types, Swift 6 data-race safety and approachable concurrency (@concurrent, main-actor-by-default, actors, task groups), protocols and generics (some vs any), API design, performance and ARC, Swift Testing, macros, and the modern language features agents don't know about yet. Use when writing, reviewing, or migrating Swift, or when a concurrency error, a hang, a data race, a retain cycle, or a performance problem needs fixing.",
+   "source": "emilkowalski/skills",
+   "source_id": "emilkowalski",
+   "license": "repo LICENSE",
+   "license_status": "full",
+   "stars": null,
+   "installs": 62749,
+   "category": null,
+   "lines": 397,
+   "tokens": 10553,
+   "fp": "16a4b6adb74e338e",
+   "also_seen": [],
+   "url": "https://github.com/emilkowalski/skills/tree/main/skills/write-swift",
+   "rel_path": "skills/write-swift/SKILL.md",
+   "versions": [
+    {
+     "sha": "8e1ec02cdd",
+     "date": "2026-08-21",
+     "fp": "2579cb2684245f75",
+     "lines": 389,
+     "tags": []
+    },
+    {
+     "sha": "0b85d4b36a",
+     "date": "2026-09-15",
+     "fp": "bdd93c6b4a0d95e5",
+     "lines": 397,
+     "tags": []
+    },
+    {
+     "sha": "85e8e2363b",
+     "date": "2026-09-15",
+     "fp": "16a4b6adb74e338e",
+     "lines": 397,
+     "tags": []
+    }
+   ],
+   "name_conflicts": [],
    "versions_count": 3
   },
   {
@@ -1011,6 +1654,7 @@
      "tags": []
     }
    ],
+   "name_conflicts": [],
    "versions_count": 28
   },
   {
@@ -1109,6 +1753,7 @@
      "tags": []
     }
    ],
+   "name_conflicts": [],
    "versions_count": 10
   },
   {
@@ -1159,6 +1804,7 @@
      "tags": []
     }
    ],
+   "name_conflicts": [],
    "versions_count": 3
   },
   {
@@ -1252,6 +1898,7 @@
      "tags": []
     }
    ],
+   "name_conflicts": [],
    "versions_count": 9
   },
   {
@@ -1323,6 +1970,7 @@
      "tags": []
     }
    ],
+   "name_conflicts": [],
    "versions_count": 6
   },
   {
@@ -1366,6 +2014,7 @@
      "tags": []
     }
    ],
+   "name_conflicts": [],
    "versions_count": 2
   },
   {
@@ -1430,6 +2079,7 @@
      "tags": []
     }
    ],
+   "name_conflicts": [],
    "versions_count": 5
   },
   {
@@ -1529,6 +2179,7 @@
      "tags": []
     }
    ],
+   "name_conflicts": [],
    "versions_count": 10
   },
   {
@@ -1686,6 +2337,7 @@
      "tags": []
     }
    ],
+   "name_conflicts": [],
    "versions_count": 18
   },
   {
@@ -1765,6 +2417,7 @@
      "tags": []
     }
    ],
+   "name_conflicts": [],
    "versions_count": 7
   },
   {
@@ -1816,6 +2469,7 @@
      ]
     }
    ],
+   "name_conflicts": [],
    "versions_count": 3
   },
   {
@@ -1938,6 +2592,7 @@
      "tags": []
     }
    ],
+   "name_conflicts": [],
    "versions_count": 13
   },
   {
@@ -1974,6 +2629,7 @@
      ]
     }
    ],
+   "name_conflicts": [],
    "versions_count": 1
   },
   {
@@ -2082,6 +2738,9 @@
      "tags": []
     }
    ],
+   "name_conflicts": [
+    "prototype--emilkowalski"
+   ],
    "versions_count": 11
   },
   {
@@ -2122,6 +2781,7 @@
      "tags": []
     }
    ],
+   "name_conflicts": [],
    "versions_count": 2
   },
   {
@@ -2165,6 +2825,7 @@
      "tags": []
     }
    ],
+   "name_conflicts": [],
    "versions_count": 2
   },
   {
@@ -2201,6 +2862,7 @@
      ]
     }
    ],
+   "name_conflicts": [],
    "versions_count": 1
   },
   {
@@ -2309,6 +2971,7 @@
      "tags": []
     }
    ],
+   "name_conflicts": [],
    "versions_count": 11
   },
   {
@@ -2352,6 +3015,7 @@
      "tags": []
     }
    ],
+   "name_conflicts": [],
    "versions_count": 2
   },
   {
@@ -2474,6 +3138,7 @@
      "tags": []
     }
    ],
+   "name_conflicts": [],
    "versions_count": 13
   },
   {
@@ -2588,6 +3253,7 @@
      "tags": []
     }
    ],
+   "name_conflicts": [],
    "versions_count": 12
   },
   {
@@ -2627,6 +3293,7 @@
      "tags": []
     }
    ],
+   "name_conflicts": [],
    "versions_count": 2
   },
   {
@@ -2710,6 +3377,7 @@
      "tags": []
     }
    ],
+   "name_conflicts": [],
    "versions_count": 8
   },
   {
@@ -2814,6 +3482,7 @@
      "tags": []
     }
    ],
+   "name_conflicts": [],
    "versions_count": 11
   },
   {
@@ -2922,6 +3591,7 @@
      "tags": []
     }
    ],
+   "name_conflicts": [],
    "versions_count": 11
   },
   {
@@ -2975,6 +3645,7 @@
      "tags": []
     }
    ],
+   "name_conflicts": [],
    "versions_count": 4
   },
   {
@@ -3072,6 +3743,7 @@
      "tags": []
     }
    ],
+   "name_conflicts": [],
    "versions_count": 10
   },
   {
@@ -3133,6 +3805,7 @@
      "tags": []
     }
    ],
+   "name_conflicts": [],
    "versions_count": 5
   },
   {
@@ -3193,6 +3866,7 @@
      "tags": []
     }
    ],
+   "name_conflicts": [],
    "versions_count": 5
   },
   {
@@ -3461,6 +4135,7 @@
      ]
     }
    ],
+   "name_conflicts": [],
    "versions_count": 28
   },
   {
@@ -3492,6 +4167,7 @@
      ]
     }
    ],
+   "name_conflicts": [],
    "versions_count": 1
   },
   {
@@ -3596,6 +4272,7 @@
      ]
     }
    ],
+   "name_conflicts": [],
    "versions_count": 6
   },
   {
@@ -3768,6 +4445,7 @@
      ]
     }
    ],
+   "name_conflicts": [],
    "versions_count": 15
   },
   {
@@ -3914,6 +4592,7 @@
      ]
     }
    ],
+   "name_conflicts": [],
    "versions_count": 12
   },
   {
@@ -4017,6 +4696,7 @@
      ]
     }
    ],
+   "name_conflicts": [],
    "versions_count": 6
   },
   {
@@ -4167,6 +4847,7 @@
      ]
     }
    ],
+   "name_conflicts": [],
    "versions_count": 12
   },
   {
@@ -4586,6 +5267,7 @@
      ]
     }
    ],
+   "name_conflicts": [],
    "versions_count": 50
   },
   {
@@ -4711,6 +5393,7 @@
      ]
     }
    ],
+   "name_conflicts": [],
    "versions_count": 9
   },
   {
@@ -4843,6 +5526,7 @@
      ]
     }
    ],
+   "name_conflicts": [],
    "versions_count": 10
   },
   {
@@ -4969,6 +5653,7 @@
      ]
     }
    ],
+   "name_conflicts": [],
    "versions_count": 9
   },
   {
@@ -5222,6 +5907,7 @@
      ]
     }
    ],
+   "name_conflicts": [],
    "versions_count": 26
   },
   {
@@ -5302,6 +5988,7 @@
      ]
     }
    ],
+   "name_conflicts": [],
    "versions_count": 3
   },
   {
@@ -5542,6 +6229,7 @@
      ]
     }
    ],
+   "name_conflicts": [],
    "versions_count": 24
   },
   {
@@ -5785,6 +6473,7 @@
      ]
     }
    ],
+   "name_conflicts": [],
    "versions_count": 25
   }
  ],

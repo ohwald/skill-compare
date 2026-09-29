@@ -37,6 +37,14 @@ SOURCES = [
         # 质量分层:半成品与废弃目录不收录(#2/#4 决议)。
         "exclude": ["in-progress/", "deprecated/"],
     },
+    {
+        "id": "emilkowalski",
+        "repo": "https://github.com/emilkowalski/skills",
+        "branch": "main",
+        "subdir": "skills",
+        "priority": 4,
+        "exclude": [],
+    },
 ]
 
 AUX = {

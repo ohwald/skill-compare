@@ -121,5 +121,13 @@ def assemble(entries, aux=None, bodies=None):
                 "fp": fp2, "also_seen": [], "url": e["url"],
                 "rel_path": e["rel_path"], "versions": [], "_repo_dir": e.get("repo_dir"),
             })
+    # 重名冲突:同名但内容不同的条目互相标注(同时安装会互相覆盖,平台需提醒)。
+    by_name2 = {}
+    for s in skills:
+        by_name2.setdefault(s["name"], []).append(s)
+    for group in by_name2.values():
+        ids = [s["id"] for s in group]
+        for s in group:
+            s["name_conflicts"] = [i for i in ids if i != s["id"]]
     skills.sort(key=lambda s: (s["source_id"], s["name"]))
     return skills

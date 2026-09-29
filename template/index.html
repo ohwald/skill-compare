@@ -143,6 +143,15 @@ body.view-raw .diffbody{height:calc(100vh - 320px);min-height:320px}
                  font-family:var(--font-mono);font-size:10.5px;color:var(--gutter);user-select:none}
 .sec-body .dr .t{flex:1;font-family:var(--font-mono);font-size:12px;line-height:1.5;
                  white-space:pre-wrap;word-break:break-word;padding-right:10px;color:var(--plain)}
+/* 重名冲突提醒 */
+.conflict-banner{display:flex;gap:10px;align-items:center;padding:10px 24px;
+                 background:var(--orange-bg);color:var(--orange);font-size:12.5px}
+.conflict-banner b{color:var(--text);font-weight:600}
+.conflict-banner .spacer{flex:1}
+.cb-btn{flex:none;padding:5px 12px;border-radius:7px;border:1px solid var(--orange);
+        background:none;color:var(--orange);cursor:pointer;font-size:12px}
+.cb-btn:hover{background:var(--orange-bg)}
+.picker .cf{color:var(--orange);font-size:10px;flex:none}
 /* 降级列 */
 .lockcol{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;
          justify-content:center;gap:12px;padding:24px}

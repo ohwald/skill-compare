@@ -8,13 +8,17 @@ const I18N = {
       lock:"专有许可 · 不转载原文",view:"查看原文 ↗",mode:"版本模式",
       count:n=>`共 ${n} 个版本`,hint:"点击时间轴圆点切换 B 侧时间点;A 侧在槽位面板「时间点」区切换;★ 为上游 tag",
       full:"全文可比",deg:"专有 · 仅摘要",latest:"最新",times:"时间点",
-      viewSec:"结构对比",viewRaw:"原文 diff",toc:"结构",lines:"行"},
+      viewSec:"结构对比",viewRaw:"原文 diff",toc:"结构",lines:"行",
+      conflictWarn:(name,n)=>`重名提醒:「${name}」还有 ${n} 个同名不同源的版本,同时安装会互相覆盖:`,
+      compareNamesake:"对比同名版本",conflict:"重名"},
   en:{search:"Search skills…",featured:"✨ Featured pairs",all:"All skills",empty:"No matching skills",
       lock:"Proprietary license · original text not reproduced",view:"View source ↗",mode:"Version mode",
       count:n=>`${n} versions total`,
       hint:"Click timeline dots to switch side B; switch side A in the slot panel's Time points; ★ marks upstream tags",
       full:"Full text",deg:"Proprietary · summary",latest:"Latest",times:"Time points",
-      viewSec:"Structure",viewRaw:"Raw diff",toc:"Structure",lines:"lines"}
+      viewSec:"Structure",viewRaw:"Raw diff",toc:"Structure",lines:"lines",
+      conflictWarn:(name,n)=>`Name conflict: "${name}" has ${n} same-named variant(s) from other sources — installing both would collide:`,
+      compareNamesake:"Compare namesakes",conflict:"name conflict"},
 };
 /* ---------- 主题 ---------- */
 const THEMES = [{"id": "tokyo-night", "label": "Tokyo Night"}, {"id": "catppuccin-mocha", "label": "Catppuccin Mocha"}, {"id": "one-dark-pro", "label": "One Dark Pro"}, {"id": "github-light", "label": "GitHub Light"}, {"id": "one-light", "label": "One Light"}, {"id": "solarized-light", "label": "Solarized Light"}];
@@ -218,6 +222,7 @@ function pickerPanel(side) {
     return `<div class="row" data-pick="${esc(s.id)}">
       ${sel ? `<span class="selbar"></span>` : ""}
       <span class="nm">${esc(s.name)}</span>${licBadge(s.license_status)}
+      ${(s.name_conflicts || []).length ? `<span class="cf" title="${esc(t("conflict"))}">⚠ ${s.name_conflicts.length}</span>` : ""}
       <span class="spacer"></span><span class="meta">${esc(s.source)}</span>
       <span class="meta">${s.stars == null ? "" : "★" + fmt(s.stars)} ${s.installs == null ? "" : "⬇" + fmt(s.installs)} ${s.lines}${t("lines")}</span>
       ${sel ? icon("check", 13, "var(--blue)") : ""}</div>`;
@@ -281,7 +286,7 @@ function render() {
          <button class="ghost" data-src="${esc(s.url)}">${esc(t("view"))}</button></div>`;
     inner = `<div class="diffbody">${pane(A)}${pane(B)}</div>`;
   }
-  app.innerHTML = topbar() + consoleHtml +
+  app.innerHTML = topbar() + consoleHtml + conflictBanner() +
     `<div class="hero-wrap"><div class="hero">${heads}${inner}</div></div>`;
   bind();
   mountContent();
@@ -292,6 +297,16 @@ function modeRow(sk) {
       <span class="mode-name">${esc(sk.name)}</span>
       <span class="mode-count">${esc(tf("count", sk.versions.length))}</span></div>
     <span class="mode-count">${esc(t("hint"))}</span></div>`;
+}
+function conflictBanner() {
+  const s = slotSkill("A");
+  if (!s || !s.name_conflicts || !s.name_conflicts.length) return "";
+  const others = s.name_conflicts.map(id => BY[id]).filter(Boolean);
+  if (!others.length) return "";
+  return `<div class="conflict-banner">${icon("warn", 15, "var(--orange)")}
+    <span>${esc(tf("conflictWarn", s.name, others.length))} <b>${esc(others.map(o => o.source).join(" / "))}</b></span>
+    <span class="spacer"></span>
+    <button class="cb-btn" data-conflict="${esc(others[0].id)}">${esc(t("compareNamesake"))}</button></div>`;
 }
 function consoleBase() {
   return `<div class="console">${slotEl("A")}<div class="swap" data-act="swap">${icon("swap", 16, "var(--dim)")}</div>${slotEl("B")}</div>`;
@@ -449,6 +464,7 @@ function bind() {
     if (i === String(refIdx(skill(state.a), state.refA))) setTime("B", "latest");
     else setTime("B", i);
   });
+  app.querySelectorAll("[data-conflict]").forEach(b => b.onclick = () => setSlot("B", b.getAttribute("data-conflict")));
   app.querySelectorAll("[data-src]").forEach(b => b.onclick = () => window.open(b.getAttribute("data-src"), "_blank"));
 }
 document.documentElement.setAttribute("data-theme", state.theme);

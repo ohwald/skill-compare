@@ -42,6 +42,22 @@ def test_same_name_different_content_stays_separate():
     assert skills[0]["also_seen"] == [] and skills[1]["also_seen"] == []
 
 
+
+def test_same_name_different_content_cross_links_conflicts():
+    entries = [make_entry("prototype", body="emil variant", priority=1, source_id="emil", repo="https://github.com/e/s"),
+               make_entry("prototype", body="matt variant", priority=2, source_id="matt", repo="https://github.com/m/s")]
+    skills = assemble(entries, aux={})
+    assert sorted(s["id"] for s in skills) == ["prototype", "prototype--matt"]
+    assert skills[0]["name_conflicts"] == ["prototype--matt"]
+    assert skills[1]["name_conflicts"] == ["prototype"]
+
+
+def test_merged_same_content_has_no_conflicts():
+    entries = [make_entry("alpha", body="same", priority=1, source_id="src", repo="https://github.com/a/b"),
+               make_entry("alpha", body="same", priority=2, source_id="other", repo="https://github.com/c/d")]
+    skills = assemble(entries, aux={})
+    assert skills[0]["name_conflicts"] == []
+
 def test_aux_data_is_attached():
     skills = assemble([make_entry("alpha")], aux={"stars": {"https://github.com/a/b": 1234},
                                                   "installs": {"alpha": 999},
