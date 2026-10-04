@@ -14,7 +14,9 @@ const I18N = {
       resident:"常驻",trigger:"触发",files:"附属文件",est:"静态估算,非实测",
       bindCC:"绑定 Claude Code",bindPort:"跨 harness 通用",
       styleProc:"流程型",stylePrin:"原则型",styleMix:"混合型",
-      costHead:"上下文成本"},
+      costHead:"上下文成本",
+      filesTab:"附属文件",noFiles:"纯单文件 skill(无附属文件)",same:"同",diff:"异",
+      onlyA:"仅 A",onlyB:"仅 B",clickView:"点击对比"},
   en:{search:"Search skills…",featured:"✨ Featured pairs",all:"All skills",empty:"No matching skills",
       lock:"Proprietary license · original text not reproduced",view:"View source ↗",mode:"Version mode",
       count:n=>`${n} versions total`,
@@ -26,7 +28,9 @@ const I18N = {
       resident:"Resident",trigger:"Trigger",files:"Aux files",est:"static estimate, not measured",
       bindCC:"Claude Code bound",bindPort:"Harness-portable",
       styleProc:"Procedural",stylePrin:"Principled",styleMix:"Mixed",
-      costHead:"Context cost"},
+      costHead:"Context cost",
+      filesTab:"Aux files",noFiles:"Single-file skill (no aux files)",same:"same",diff:"differs",
+      onlyA:"A only",onlyB:"B only",clickView:"click to compare"},
 };
 /* ---------- 主题 ---------- */
 const THEMES = [{"id": "tokyo-night", "label": "Tokyo Night"}, {"id": "catppuccin-mocha", "label": "Catppuccin Mocha"}, {"id": "one-dark-pro", "label": "One Dark Pro"}, {"id": "github-light", "label": "GitHub Light"}, {"id": "one-light", "label": "One Light"}, {"id": "solarized-light", "label": "Solarized Light"}];
@@ -46,7 +50,7 @@ const state = {
   refB: q.get("rb") || "latest",
   lang: localStorage.getItem("lang") || "zh",
   theme: q.get("theme") || localStorage.getItem("theme") || "tokyo-night",
-  view: q.get("v") === "raw" ? "raw" : "sections",
+  view: q.get("v") === "raw" ? "raw" : (q.get("v") === "files" ? "files" : "sections"),
   picker: null, query: ""
 };
 const t = k => { const v = I18N[state.lang][k]; return typeof v === "function" ? v(0) : v; };
@@ -56,7 +60,7 @@ function syncURL() {
   const p = new URLSearchParams({a: state.a, b: state.b, lang: state.lang, theme: state.theme});
   if (state.refA !== "latest") p.set("ra", state.refA);
   if (state.refB !== "latest") p.set("rb", state.refB);
-  if (state.view === "raw") p.set("v", "raw");
+  if (state.view !== "sections") p.set("v", state.view);
   history.replaceState(null, "", "?" + p.toString());
 }
 function isVersion() { return state.a && state.a === state.b; }
@@ -348,6 +352,7 @@ function render() {
       <div class="vtoggle">
         <button class="${state.view === "sections" ? "on" : ""}" data-view="sections">${esc(t("viewSec"))}</button>
         <button class="${state.view === "raw" ? "on" : ""}" data-view="raw">${esc(t("viewRaw"))}</button>
+        <button class="${state.view === "files" ? "on" : ""}" data-view="files">${esc(t("filesTab"))}</button>
       </div></div>
       <div class="toc hidden" id="toc"></div>
       <div class="diffbody"><div class="loading" style="width:100%">…</div></div>`;
@@ -407,6 +412,7 @@ function mountContent() {
     if (my !== renderSeq) return;
     if (!bothFull) { fillPlainSingle(ra, rb); return; }
     if (state.view === "raw") { mountRaw(ra, rb, my); return; }
+    if (state.view === "files") { mountFiles(my); return; }
     mountSections(ra, rb, my);
   });
 }
@@ -459,6 +465,62 @@ function buildToc(secA, secB) {
       const el = document.getElementById(`sec-${side}-${slug}`);
       if (el) el.scrollIntoView({block: "start", behavior: "smooth"});
     });
+  });
+}
+function rawBase(side) {
+  const s = slotSkill(side);
+  const commit = side === "A" ? state.refA : state.refB;
+  let sha = null;
+  if (commit !== "latest") {
+    const v = (s.versions || [])[refIdx(s, commit)];
+    sha = v && v.sha;
+  }
+  return {repo: s.source, ref: sha || s.head || "main", dir: s.rel_path.replace("\/SKILL.md", "")};
+}
+function mountFiles(my) {
+  const bd = document.querySelector(".diffbody");
+  if (!bd || my !== renderSeq) return;
+  const A = slotSkill("A"), B = slotSkill("B");
+  const fa = {}, fb = {};
+  (A.files || []).forEach(f => fa[f.path] = f);
+  (B.files || []).forEach(f => fb[f.path] = f);
+  const paths = [...new Set([...Object.keys(fa), ...Object.keys(fb)])].sort();
+  if (!paths.length) {
+    bd.innerHTML = `<div class="lockcol"><div class="note">${esc(t("noFiles"))}</div></div>`;
+    return;
+  }
+  const rows = paths.map(p => {
+    const a = fa[p], b = fb[p];
+    const status = a && !b ? "only-a" : (b && !a ? "only-b" : (a.sha === b.sha ? "same" : "differs"));
+    const label = status === "same" ? t("same") : status === "differs" ? t("diff")
+      : status === "only-a" ? t("onlyA") : t("onlyB");
+    const isImg = /\.(png|jpe?g|gif|svg|webp)$/i.test(p);
+    const cell = (side, f, soft) => {
+      if (!f) return `<span class="fc-empty">—</span>`;
+      const info = rawBase(side);
+      const url = `https://raw.githubusercontent.com/${info.repo}/${info.ref}/${info.dir}/${f.path}`;
+      const size = f.size >= 1024 ? (f.size / 1024).toFixed(1) + "K" : f.size + "B";
+      if (isImg) {
+        return `<button class="fc-img" data-url="${esc(url)}" title="${esc(url)}">
+          <img src="${esc(url)}" loading="lazy" alt="${esc(f.path)}"
+               onerror="this.replaceWith(document.createTextNode('⚠'))">
+          <span class="fc-meta">${esc(size)}</span></button>`;
+      }
+      return `<button class="fc-file" data-url="${esc(url)}" data-path="${esc(f.path)}"
+                      data-side="${side}" title="${esc(t("clickView"))}">
+        <span class="mono">${esc(f.path)}</span><span class="fc-meta">${esc(size)}</span></button>`;
+    };
+    return `<div class="frow st-${status}">
+      <div class="fc">${cell("A", a, "a")}</div>
+      <div class="fmid"><span class="fpath">${esc(p)}</span>
+        <span class="fst st-${status}">${esc(label)}</span></div>
+      <div class="fc">${cell("B", b, "b")}</div></div>`;
+  }).join("");
+  bd.innerHTML = `<div class="filesgrid">${rows}</div>`;
+  bd.querySelectorAll("[data-url]").forEach(el => el.onclick = () => window.open(el.getAttribute("data-url"), "_blank"));
+  bd.querySelectorAll(".fc-file[data-side]").forEach(el => el.onclick = () => {
+    const url = el.getAttribute("data-url"), p = el.getAttribute("data-path");
+    window.open(url, "_blank");
   });
 }
 function mountRaw(ra, rb, my) {

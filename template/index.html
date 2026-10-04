@@ -179,6 +179,27 @@ body.view-raw .diffbody{height:calc(100vh - 320px);min-height:320px}
         background:none;color:var(--orange);cursor:pointer;font-size:12px}
 .cb-btn:hover{background:var(--orange-bg)}
 .picker .cf{color:var(--orange);font-size:10px;flex:none}
+/* 附属文件对比 */
+.filesgrid{display:flex;flex-direction:column;width:100%;overflow-y:auto;max-height:calc(100vh - 320px)}
+.frow{display:flex;align-items:stretch;border-bottom:1px solid var(--dimline)}
+.fmid{width:34%;flex:none;display:flex;gap:8px;align-items:center;padding:6px 12px;min-width:0}
+.fpath{font-family:var(--font-mono);font-size:11.5px;color:var(--text);
+       white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fst{font-size:9.5px;padding:1px 6px;border-radius:4px;flex:none}
+.fst.same{background:var(--green-bg);color:var(--green)}
+.fst.differs{background:var(--orange-bg);color:var(--orange)}
+.fst.only-a,.fst.only-b{background:var(--panel2);color:var(--faint)}
+.fc{flex:1;min-width:0;display:flex;align-items:center;padding:4px 10px}
+.fc:first-child{border-right:1px solid var(--line)}
+.fc-empty{color:var(--gutter);font-size:11px}
+.fc-file{display:flex;gap:8px;align-items:center;width:100%;background:none;border:0;
+         cursor:pointer;padding:3px 6px;border-radius:6px;color:var(--plain)}
+.fc-file:hover{background:var(--panel2);color:var(--blue)}
+.fc-file .mono{font-family:var(--font-mono);font-size:11px;white-space:nowrap;
+               overflow:hidden;text-overflow:ellipsis}
+.fc-meta{margin-left:auto;font-family:var(--font-mono);font-size:10px;color:var(--faint);flex:none}
+.fc-img{display:flex;gap:6px;align-items:center;background:none;border:0;cursor:pointer;padding:2px}
+.fc-img img{width:44px;height:44px;object-fit:contain;border-radius:6px;background:var(--panel2)}
 /* 降级列 */
 .lockcol{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;
          justify-content:center;gap:12px;padding:24px}

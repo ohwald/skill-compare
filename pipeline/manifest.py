@@ -53,7 +53,28 @@ def collect_source_entries(source, repo_dir):
         name = meta.get("name") or os.path.basename(root)
         cost = analyze_context_cost(text, root)
         compat = analyze_compat(meta, text)
+        head = ""
+        try:
+            from .versions import _git
+            head = _git(repo_dir, "rev-parse", "HEAD").strip()[:12]
+        except Exception:
+            head = ""
+        files = []
+        for froot, _fd, ffiles in os.walk(root):
+            for fname in ffiles:
+                if fname == "SKILL.md" or fname.startswith("."):
+                    continue
+                fpath = os.path.join(froot, fname)
+                frel = os.path.relpath(fpath, root).replace(os.sep, "/")
+                try:
+                    fsha = hashlib.sha256(open(fpath, "rb").read()).hexdigest()[:16]
+                except OSError:
+                    continue
+                files.append({"path": frel, "size": os.path.getsize(fpath), "sha": fsha})
+        files.sort(key=lambda x: x["path"])
         entries.append({
+            "head": head,
+            "files": files,
             "context_cost": cost,
             "compat": compat,
             "source_id": source["id"],
@@ -106,6 +127,7 @@ def assemble(entries, aux=None, bodies=None):
             "tokens": approx_tokens(canonical["body"]),
             "fp": fp, "also_seen": also_seen, "url": canonical["url"],
             "context_cost": canonical["context_cost"], "compat": canonical["compat"],
+            "head": canonical.get("head", ""), "files": canonical.get("files", []),
             "rel_path": canonical["rel_path"], "versions": [], "_repo_dir": canonical.get("repo_dir"),
         })
         for e in diff:
@@ -126,6 +148,7 @@ def assemble(entries, aux=None, bodies=None):
                 "tokens": approx_tokens(e["body"]),
                 "fp": fp2, "also_seen": [], "url": e["url"],
                 "context_cost": e["context_cost"], "compat": e["compat"],
+                "head": e.get("head", ""), "files": e.get("files", []),
                 "rel_path": e["rel_path"], "versions": [], "_repo_dir": e.get("repo_dir"),
             })
     # 重名冲突:同名但内容不同的条目互相标注(同时安装会互相覆盖,平台需提醒)。
