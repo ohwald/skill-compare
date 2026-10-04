@@ -97,7 +97,15 @@ def build(fixtures_dir=None, real=False, sources_dir=".sources", out="site",
     (out_dir / "manifest.json").write_text(
         json.dumps(manifest, ensure_ascii=False, indent=1), encoding="utf-8")
     html = TEMPLATE.read_text()
-    payload = json.dumps(manifest, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
+    # 内联 lite 版:选择器/对比只需元数据;versions 与 files 清单按需 fetch 完整版
+    LITE_FIELDS = ("id", "name", "desc", "source", "source_id", "license", "license_status",
+                   "stars", "installs", "lines", "tokens", "context_cost", "compat",
+                   "also_seen", "name_conflicts", "versions_count")
+    lite = {**manifest, "lite": True,
+            "skills": [{k: s[k] for k in LITE_FIELDS if k in s} for s in manifest["skills"]]}
+    payload = json.dumps(lite, ensure_ascii=False, separators=(",", ":")).replace("</", "<\/")
+    (out_dir / "manifest.json").write_text(
+        json.dumps(manifest, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     html = html.replace("__THEME_CSS__", theme_css(themes))
     html = html.replace("__THEME_LIST__", theme_list(themes))
     html = html.replace("__MANIFEST__", payload)

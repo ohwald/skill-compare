@@ -1,5 +1,14 @@
 "use strict";
-const MANIFEST = JSON.parse(document.getElementById("manifest").textContent);
+const INLINE = JSON.parse(document.getElementById("manifest").textContent);
+/* lite 内联版缺 versions/files:异步补全完整版;补全前用 versions_count 兜底 */
+let MANIFEST = INLINE;
+let fullReady = INLINE.lite
+  ? fetch("manifest.json").then(r => r.json()).then(full => {
+      const byId = Object.fromEntries(full.skills.map(s => [s.id, s]));
+      for (const s of INLINE.skills) { const f = byId[s.id]; if (f) { s.versions = f.versions; s.files = f.files; s.head = f.head; s.rel_path = f.rel_path; s.url = f.url; s.category = f.category; } }
+      MANIFEST = full; render();
+    })
+  : Promise.resolve();
 const BY = Object.fromEntries(MANIFEST.skills.map(s => [s.id, s]));
 
 /* ---------- i18n(UI 文案;skill 内容一律原文) ---------- */
