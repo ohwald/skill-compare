@@ -45,6 +45,75 @@ SOURCES = [
         "priority": 4,
         "exclude": [],
     },
+    # ---- 2026-10-04 扩源(尽调实测见 issue #8 评论)----
+    {
+        "id": "azure",
+        "repo": "https://github.com/microsoft/azure-skills",
+        "branch": "main",
+        "subdir": "skills",
+        "priority": 5,
+        "exclude": [],
+    },
+    {
+        "id": "wshobson",
+        "repo": "https://github.com/wshobson/agents",
+        "branch": "main",
+        # 两层嵌套:plugins/<plugin>/skills/<skill>/
+        "subdir": "plugins",
+        "priority": 6,
+        "exclude": [],
+    },
+    {
+        "id": "kdense",
+        "repo": "https://github.com/K-Dense-AI/scientific-agent-skills",
+        "branch": "main",
+        "subdir": "skills",
+        "priority": 7,
+        "exclude": ["tests/"],
+    },
+    {
+        "id": "openai",
+        "repo": "https://github.com/openai/skills",
+        "branch": "main",
+        "subdir": "skills",
+        "priority": 8,
+        # .system 为 Codex 内置系统技能;无仓库级 license → 全体降级展示
+        "exclude": ["skills/.system/"],
+    },
+    {
+        "id": "addyosmani",
+        "repo": "https://github.com/addyosmani/agent-skills",
+        "branch": "main",
+        "subdir": "skills",
+        "priority": 9,
+        "exclude": [],
+    },
+    {
+        "id": "prisma",
+        "repo": "https://github.com/prisma/skills",
+        # 顶层平铺,无 skills/ 前缀
+        "branch": "main",
+        "subdir": ".",
+        "priority": 10,
+        "exclude": ["prisma-database-setup"],
+    },
+    {
+        "id": "baoyu",
+        "repo": "https://github.com/JimLiu/baoyu-skills",
+        "branch": "main",
+        "subdir": "skills",
+        "priority": 11,
+        # 逆向工程 API 的危险变体,合规存疑
+        "exclude": ["baoyu-danger-"],
+    },
+    {
+        "id": "supabase",
+        "repo": "https://github.com/supabase/agent-skills",
+        "branch": "main",
+        "subdir": "skills",
+        "priority": 12,
+        "exclude": [],
+    },
 ]
 
 AUX = {
