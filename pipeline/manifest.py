@@ -4,6 +4,7 @@ import hashlib
 import os
 
 from . import config
+from .analyze import analyze_compat, analyze_context_cost
 from .parse import classify_license, parse_frontmatter  # noqa: F401 (re-export)
 
 
@@ -50,7 +51,11 @@ def collect_source_entries(source, repo_dir):
             lic_text = repo_license
         status, lic_label = classify_license(meta.get("license"), lic_text)
         name = meta.get("name") or os.path.basename(root)
+        cost = analyze_context_cost(text, root)
+        compat = analyze_compat(meta, text)
         entries.append({
+            "context_cost": cost,
+            "compat": compat,
             "source_id": source["id"],
             "priority": source["priority"],
             "repo": source["repo"].removeprefix("https://github.com/"),
@@ -100,6 +105,7 @@ def assemble(entries, aux=None, bodies=None):
             "lines": canonical["body"].count("\n") + 1,
             "tokens": approx_tokens(canonical["body"]),
             "fp": fp, "also_seen": also_seen, "url": canonical["url"],
+            "context_cost": canonical["context_cost"], "compat": canonical["compat"],
             "rel_path": canonical["rel_path"], "versions": [], "_repo_dir": canonical.get("repo_dir"),
         })
         for e in diff:
@@ -119,6 +125,7 @@ def assemble(entries, aux=None, bodies=None):
                 "lines": e["body"].count("\n") + 1,
                 "tokens": approx_tokens(e["body"]),
                 "fp": fp2, "also_seen": [], "url": e["url"],
+                "context_cost": e["context_cost"], "compat": e["compat"],
                 "rel_path": e["rel_path"], "versions": [], "_repo_dir": e.get("repo_dir"),
             })
     # 重名冲突:同名但内容不同的条目互相标注(同时安装会互相覆盖,平台需提醒)。

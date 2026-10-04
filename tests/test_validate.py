@@ -7,6 +7,8 @@ def base_skill(sid="a", fp="fp-a", status="full", versions=None):
     return {"id": sid, "name": sid, "desc": "d", "source": "x/y", "source_id": "x",
             "license": "MIT", "license_status": status, "stars": 1, "installs": None,
             "lines": 1, "tokens": 1, "fp": fp, "also_seen": [], "url": "u",
+            "context_cost": {"resident": 10, "trigger": 100, "files": 0},
+            "compat": {"binding": "portable", "harness_fields": [], "style": "mixed", "unknown_fields": []},
             "versions": versions or []}
 
 

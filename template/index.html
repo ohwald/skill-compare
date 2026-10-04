@@ -121,6 +121,18 @@ button{font-family:var(--font-ui)}
 .colhead .dot{width:7px;height:7px;border-radius:4px;flex:none}
 .colhead .nm{font-family:var(--font-mono);font-size:12.5px;color:var(--plain);
              white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* 成本与适配标记 */
+.colhead .in-col{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}
+.colhead .in-row{display:flex;gap:8px;align-items:center;min-width:0}
+.colhead .meta-row{flex-wrap:wrap}
+.costchip{display:inline-flex;gap:4px;align-items:center;font-family:var(--font-mono);
+          font-size:10.5px;color:var(--dim);background:var(--panel2);
+          padding:2px 8px;border-radius:999px;white-space:nowrap}
+.bindchip{font-size:10px;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.bindchip.cc{background:var(--orange-bg);color:var(--orange)}
+.bindchip.port{background:var(--green-bg);color:var(--green)}
+.stylechip{font-size:10px;padding:2px 8px;border-radius:999px;
+           border:1px solid var(--line);color:var(--faint);white-space:nowrap}
 /* 结构目录 */
 .toc{display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:8px 16px;
      border-bottom:1px solid var(--line)}

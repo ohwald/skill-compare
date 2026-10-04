@@ -9,7 +9,9 @@ def make_entry(name, body="body", priority=1, source_id="src", repo="https://git
     return {"source_id": source_id, "priority": priority, "repo": repo, "name": name,
             "desc": f"{name} desc", "license": "MIT", "license_status": "full",
             "body": body, "rel_dir": f"skills/{name}", "rel_path": f"skills/{name}/SKILL.md",
-            "url": f"{repo}/tree/main/skills/{name}"}
+            "url": f"{repo}/tree/main/skills/{name}",
+            "context_cost": {"resident": 10, "trigger": 100, "files": 0},
+            "compat": {"binding": "portable", "harness_fields": [], "style": "mixed", "unknown_fields": []}}
 
 
 def test_fingerprint_is_stable_short_sha():

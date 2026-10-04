@@ -10,7 +10,11 @@ const I18N = {
       full:"全文可比",deg:"专有 · 仅摘要",latest:"最新",times:"时间点",
       viewSec:"结构对比",viewRaw:"原文 diff",toc:"结构",lines:"行",
       conflictWarn:(name,n)=>`重名提醒:「${name}」还有 ${n} 个同名不同源的版本,同时安装会互相覆盖:`,
-      compareNamesake:"对比同名版本",conflict:"重名"},
+      compareNamesake:"对比同名版本",conflict:"重名",
+      resident:"常驻",trigger:"触发",files:"附属文件",est:"静态估算,非实测",
+      bindCC:"绑定 Claude Code",bindPort:"跨 harness 通用",
+      styleProc:"流程型",stylePrin:"原则型",styleMix:"混合型",
+      costHead:"上下文成本"},
   en:{search:"Search skills…",featured:"✨ Featured pairs",all:"All skills",empty:"No matching skills",
       lock:"Proprietary license · original text not reproduced",view:"View source ↗",mode:"Version mode",
       count:n=>`${n} versions total`,
@@ -18,7 +22,11 @@ const I18N = {
       full:"Full text",deg:"Proprietary · summary",latest:"Latest",times:"Time points",
       viewSec:"Structure",viewRaw:"Raw diff",toc:"Structure",lines:"lines",
       conflictWarn:(name,n)=>`Name conflict: "${name}" has ${n} same-named variant(s) from other sources — installing both would collide:`,
-      compareNamesake:"Compare namesakes",conflict:"name conflict"},
+      compareNamesake:"Compare namesakes",conflict:"name conflict",
+      resident:"Resident",trigger:"Trigger",files:"Aux files",est:"static estimate, not measured",
+      bindCC:"Claude Code bound",bindPort:"Harness-portable",
+      styleProc:"Procedural",stylePrin:"Principled",styleMix:"Mixed",
+      costHead:"Context cost"},
 };
 /* ---------- 主题 ---------- */
 const THEMES = [{"id": "tokyo-night", "label": "Tokyo Night"}, {"id": "catppuccin-mocha", "label": "Catppuccin Mocha"}, {"id": "one-dark-pro", "label": "One Dark Pro"}, {"id": "github-light", "label": "GitHub Light"}, {"id": "one-light", "label": "One Light"}, {"id": "solarized-light", "label": "Solarized Light"}];
@@ -106,6 +114,19 @@ function fmt(n) { return n == null ? "—" : (n >= 1e6 ? (n / 1e6).toFixed(1) + 
 function licBadge(lic) {
   const full = lic === "full";
   return `<span class="lic-badge ${full ? "full" : "deg"}">${esc(full ? t("full") : t("deg"))}</span>`;
+}
+function costChip(s) {
+  const cc = s.context_cost; if (!cc) return "";
+  const f = cc.files ? ` · ${cc.files} ${t("files")}` : "";
+  return `<span class="costchip" title="${esc(t("est"))}">${icon("coins", 11, "var(--dim)")}${esc(t("resident"))} ~${fmt(cc.resident)} / ${esc(t("trigger"))} ~${fmt(cc.trigger)} tok${f}</span>`;
+}
+function compatChip(s) {
+  const c = s.compat; if (!c) return "";
+  const bind = c.binding === "claude-code"
+    ? `<span class="bindchip cc" title="${esc((c.harness_fields || []).join(", "))}">${esc(t("bindCC"))}</span>`
+    : `<span class="bindchip port">${esc(t("bindPort"))}</span>`;
+  const styleKey = {procedural: "styleProc", principled: "stylePrin", mixed: "styleMix"}[c.style] || "styleMix";
+  return `${bind}<span class="stylechip">${esc(t(styleKey))}</span>`;
 }
 function timeChip(s, ref) {
   const lb = refLabel(s, ref);
@@ -224,7 +245,7 @@ function pickerPanel(side) {
       <span class="nm">${esc(s.name)}</span>${licBadge(s.license_status)}
       ${(s.name_conflicts || []).length ? `<span class="cf" title="${esc(t("conflict"))}">⚠ ${s.name_conflicts.length}</span>` : ""}
       <span class="spacer"></span><span class="meta">${esc(s.source)}</span>
-      <span class="meta">${s.stars == null ? "" : "★" + fmt(s.stars)} ${s.installs == null ? "" : "⬇" + fmt(s.installs)} ${s.lines}${t("lines")}</span>
+      <span class="meta">${s.stars == null ? "" : "★" + fmt(s.stars)} ${s.installs == null ? "" : "⬇" + fmt(s.installs)} ${s.lines}${t("lines")}${s.context_cost ? ` · ${t("resident")}~${fmt(s.context_cost.resident)}` : ""}</span>
       ${sel ? icon("check", 13, "var(--blue)") : ""}</div>`;
   }).join("");
   return `<div class="picker" data-stop="1">
@@ -280,13 +301,18 @@ function render() {
   const A = skill(state.a), B = skill(state.b);
   const version = isVersion() && A && (A.versions || []).length >= 2;
   const consoleHtml = (version ? modeRow(A) : "") + consoleBase();
-  const heads = (A && B) ? `<div class="colheads">
-    <div class="colhead" data-side="A"><div class="accent a"></div>
-      <div class="in"><span class="dot" style="background:var(--blue)"></span>
-      <span class="nm">${esc(headName("A"))}</span></div></div>
-    <div class="colhead" data-side="B"><div class="accent b"></div>
-      <div class="in"><span class="dot" style="background:var(--purple)"></span>
-      <span class="nm">${esc(headName("B"))}</span></div></div></div>` : "";
+  const headRow = (side) => {
+    const s = slotSkill(side); if (!s) return `<div class="colhead" data-side="${side}"><div class="accent ${side === "A" ? "a" : "b"}"></div>
+      <div class="in"><span class="dot" style="background:var(--${side === "A" ? "blue" : "purple"})"></span>
+      <span class="nm">—</span></div></div>`;
+    return `<div class="colhead" data-side="${side}"><div class="accent ${side === "A" ? "a" : "b"}"></div>
+      <div class="in"><div class="in-col">
+        <div class="in-row"><span class="dot" style="background:var(--${side === "A" ? "blue" : "purple"})"></span>
+          <span class="nm">${esc(headName(side))}</span>${licBadge(s.license_status)}</div>
+        <div class="in-row meta-row">${costChip(s)}${compatChip(s)}</div>
+      </div></div></div>`;
+  };
+  const heads = (A && B) ? `<div class="colheads">${headRow("A")}${headRow("B")}</div>` : "";
   let inner;
   if (!A || !B) inner = `<div class="diffbody"></div>`;
   else if (A.license_status === "full" && B.license_status === "full")

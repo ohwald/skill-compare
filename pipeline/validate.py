@@ -2,6 +2,7 @@
 
 REQUIRED_SKILL_FIELDS = {"id", "name", "desc", "source", "source_id", "license",
                          "license_status", "stars", "installs", "lines", "tokens",
+                         "context_cost", "compat",
                          "fp", "also_seen", "url", "versions"}
 
 
