@@ -193,6 +193,43 @@ body.view-raw .diffbody{height:calc(100vh - 320px);min-height:320px}
 .row .cf{color:var(--orange);font-size:9.5px;max-width:140px;overflow:hidden;
          text-overflow:ellipsis;white-space:nowrap;flex:none}
 .row .nm b{color:var(--blue);font-weight:700}
+/* 版本控制台 */
+.vconsole{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+          margin:16px 24px 4px;padding:14px 18px;display:flex;flex-direction:column;gap:12px}
+.vrow1{display:flex;gap:14px;align-items:center}
+.vrow1 .slot{flex:1}
+.mode-tabs{display:flex;gap:2px;background:var(--panel2);border-radius:8px;padding:3px;flex:none;margin-left:auto}
+.mode-tabs button{border:0;background:none;color:var(--faint);font-size:11px;
+                  padding:4px 11px;border-radius:6px;cursor:pointer;white-space:nowrap}
+.mode-tabs button.on{background:var(--panel);color:var(--blue)}
+.vrow2{display:flex;gap:12px;align-items:center}
+.vwrap{position:relative;flex:1;min-width:0}
+.vbtn{display:flex;gap:9px;align-items:center;width:100%;padding:11px 14px;
+      background:var(--panel2);border:1px solid var(--line);border-radius:10px;
+      cursor:pointer;color:var(--text);font-family:var(--font-mono);font-size:12px;text-align:left}
+.vbtn.va{border-color:var(--blue)}
+.vbtn.vb{border-color:var(--purple)}
+.vbtn:hover{border-width:2px;padding:10px 13px}
+.vtagchip{background:var(--blue-soft);color:var(--blue);border-radius:5px;padding:2px 7px;
+          font-size:10.5px;flex:none}
+.vwrap[data-side="B"] .vtagchip{background:var(--purple-soft);color:var(--purple)}
+.lat{color:var(--green);font-size:10.5px}
+.vpanel{position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:70;
+        background:var(--panel);border:1px solid var(--line);border-radius:10px;
+        box-shadow:0 12px 32px #000000b0;max-height:380px;overflow-y:auto}
+.vrow{display:flex;gap:8px;align-items:center;padding:8px 12px;cursor:pointer}
+.vrow:hover{background:var(--panel2)}
+.vrow.cur{background:var(--panel2)}
+.vrow.cur .chk{color:var(--blue)}
+.vrow .vt{font-family:var(--font-mono);font-size:10.5px;color:var(--blue);
+          background:var(--blue-soft);padding:1px 6px;border-radius:4px;flex:none}
+.vrow .vd{font-family:var(--font-mono);font-size:11px;color:var(--plain);flex:1}
+.vrow .vl{font-size:10px;color:var(--green);flex:none}
+.sec-band{cursor:pointer}
+.sec-band .tw{display:flex;transition:transform .12s;flex:none}
+.sec.collapsed .tw{transform:rotate(-90deg)}
+.sec.collapsed .sec-body{display:none}
+.sec.collapsed{border-bottom:1px solid var(--dimline)}
 /* 重名冲突提醒 */
 .conflict-banner{display:flex;gap:10px;align-items:center;padding:10px 24px;
                  background:var(--orange-bg);color:var(--orange);font-size:12.5px}
