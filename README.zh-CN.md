@@ -1,8 +1,8 @@
-# Skill Compare
+# Skill History
 
-**[🚀 在线体验](https://ohwald.github.io/skill-compare/)** · [English](README.md)
+**[🚀 在线体验](https://ohwald.github.io/skill-history/)** · [English](README.md)
 
-Agent Skills(SKILL.md 包)的**并排对比站**:任选两个 skill 并排深读(Monaco diff);同一 skill 沿 commit 时间轴与自己的历史版本对比;专有许可 skill 以「仅元数据」的降级方式收录。纯 Python stdlib 管线 + 零构建单文件前端,无运行时依赖。
+Agent Skills(SKILL.md 包)的**演化历史与并排对比站**:任选两个 skill 并排深读(Monaco diff);同一 skill 沿 commit 时间轴与自己的历史版本对比;专有许可 skill 以「仅元数据」的降级方式收录。纯 Python stdlib 管线 + 零构建单文件前端,无运行时依赖。
 
 ## 功能
 

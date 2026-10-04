@@ -4,7 +4,7 @@
 
 ### Issue tracker
 
-GitHub Issues(用 `gh` CLI;仓库 `ohwald/skill-compare`,公开). See `docs/agents/issue-tracker.md`.
+GitHub Issues(用 `gh` CLI;仓库 `ohwald/skill-history`,公开). See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 

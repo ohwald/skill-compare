@@ -198,14 +198,14 @@ const app = document.getElementById("app");
 function topbar() {
   const opts = THEMES.map(th => `<option value="${th.id}" ${th.id === state.theme ? "selected" : ""}>${esc(th.label)}</option>`).join("");
   return `<div class="topbar">
-    <div class="brand">${icon("logo", 17, "var(--blue)")}<span>Skill Compare</span></div>
+    <div class="brand">${icon("logo", 17, "var(--blue)")}<span>Skill History</span></div>
     <div class="topright">
       <div class="lang">
         <button class="${state.lang === "zh" ? "on" : ""}" data-act="lang-zh">中文</button>
         <button class="${state.lang === "en" ? "on" : ""}" data-act="lang-en">EN</button>
       </div>
       <select class="theme-sel" data-act="theme">${opts}</select>
-      <a href="https://github.com/ohwald/skill-compare" target="_blank" rel="noopener">${icon("gh", 17, "var(--dim)")}</a>
+      <a href="https://github.com/ohwald/skill-history" target="_blank" rel="noopener">${icon("gh", 17, "var(--dim)")}</a>
     </div></div>`;
 }
 function slotEl(side) {
