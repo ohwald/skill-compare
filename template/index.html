@@ -97,6 +97,13 @@ button{font-family:var(--font-ui)}
 .t-slider input.ts-a::-moz-range-thumb{background:var(--blue)}
 .t-slider input.ts-b::-moz-range-thumb{background:var(--purple)}
 .t-slider input.ts-a:active::-webkit-slider-thumb,.t-slider input.ts-b:active::-webkit-slider-thumb{cursor:grabbing}
+.t-bubble{position:absolute;top:-30px;transform:translateX(-50%);opacity:0;pointer-events:none;
+          transition:opacity .12s;white-space:pre;text-align:center;
+          font-family:var(--font-mono);font-size:10px;line-height:1.5;
+          background:var(--panel2);border:1px solid var(--line);border-radius:7px;
+          padding:3px 8px;color:var(--text);z-index:5}
+.t-bubble.show{opacity:1}
+.t-bubble.ba{color:var(--blue)}.t-bubble.bb{color:var(--purple)}
 .t-dates{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:10.5px}
 .t-dates .da{color:var(--blue)}.t-dates .db{color:var(--purple)}
 /* 对比主体 */

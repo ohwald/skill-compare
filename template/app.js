@@ -32,10 +32,18 @@ const I18N = {
 const THEMES = __THEME_LIST__;
 /* ---------- 状态:槽位 = skill @ 时间点 ---------- */
 const q = new URLSearchParams(location.search);
+/* 默认视图:单个 skill 的版本自比(phistory 心智)——无 a/b 参数时选第一个
+   有 ≥2 个版本的 skill,A=最早、B=最新;带 a/b 参数则按参数(横向对比)。 */
+function defaultSelfCompareSkill() {
+  const s = MANIFEST.skills.find(s => (s.versions || []).length >= 2);
+  return (s || MANIFEST.skills[0] || {}).id || "";
+}
+const hasAB = q.get("a") && q.get("b");
 const state = {
-  a: q.get("a") || (MANIFEST.skills[0] && MANIFEST.skills[0].id) || "",
-  b: q.get("b") || (MANIFEST.skills[1] && MANIFEST.skills[1].id) || "",
-  refA: q.get("ra") || "latest", refB: q.get("rb") || "latest",
+  a: q.get("a") || defaultSelfCompareSkill(),
+  b: hasAB ? q.get("b") : (q.get("a") || defaultSelfCompareSkill()),
+  refA: q.get("ra") || "0",
+  refB: q.get("rb") || "latest",
   lang: localStorage.getItem("lang") || "zh",
   theme: q.get("theme") || localStorage.getItem("theme") || "tokyo-night",
   view: q.get("v") === "raw" ? "raw" : "sections",
@@ -277,6 +285,26 @@ function timelineEl(sk) {
     <div class="t-dates"><span class="da">${esc(vs[ia].date + " · " + vs[ia].sha)}</span>
     <span class="db">${esc(vs[ib].date + " · " + vs[ib].sha)}</span></div></div>`;
 }
+function bubbleText(sk, i) {
+  const v = sk.versions[i];
+  if (!v) return "";
+  return (v.tags && v.tags.length ? "★ " + v.tags.join(", ") + "\n" : "") + v.date + " · " + v.sha;
+}
+function moveBubble(el, idx, cls) {
+  const sk = skill(state.a); if (!sk) return;
+  const n = sk.versions.length;
+  let b = app.querySelector(".t-bubble." + cls);
+  if (!b) {
+    b = document.createElement("div");
+    b.className = "t-bubble " + cls;
+    el.closest(".t-slider").appendChild(b);
+  }
+  if (idx == null) { b.classList.remove("show"); return; }
+  const pct = n === 1 ? 50 : (idx / (n - 1)) * 100;
+  b.style.left = Math.min(88, Math.max(12, pct)) + "%";
+  b.classList.add("show");
+  b.textContent = bubbleText(sk, idx);
+}
 function lightTimelineUpdate() {
   const sk = skill(state.a); if (!sk) return;
   const va = resolveV("A"), vb = resolveV("B");
@@ -509,11 +537,12 @@ function bind() {
   if (inA && inB && sk) {
     inA.oninput = () => { let v = +inA.value; const b = +inB.value;
       if (v > b) { v = b; inA.value = v; }
-      state.refA = String(v); lightTimelineUpdate(); };
+      state.refA = String(v); lightTimelineUpdate(); moveBubble(inA, v, "ba"); };
     inB.oninput = () => { let v = +inB.value; const a = +inA.value;
       if (v < a) { v = a; inB.value = v; }
-      state.refB = String(v); lightTimelineUpdate(); };
-    inA.onchange = inB.onchange = () => { syncURL(); render(); };
+      state.refB = String(v); lightTimelineUpdate(); moveBubble(inB, v, "bb"); };
+    inA.onchange = inB.onchange = () => { moveBubble(inA, null, "ba"); moveBubble(inB, null, "bb");
+      syncURL(); render(); };
   }
   app.querySelectorAll("[data-conflict]").forEach(b => b.onclick = () => setSlot("B", b.getAttribute("data-conflict")));
   app.querySelectorAll("[data-src]").forEach(b => b.onclick = () => window.open(b.getAttribute("data-src"), "_blank"));
