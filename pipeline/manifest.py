@@ -16,6 +16,53 @@ def approx_tokens(text):
     return max(1, len(text) // 4)
 
 
+# ---- 选择器元数据:领域标签 + 套件归属 ----
+TAG_RULES = [
+    ("design", ("design", "ui", "frontend", "css", "typography", "brand", "aesthetic", "figma")),
+    ("frontend", ("frontend", "react", "vue", "web", "component")),
+    ("backend", ("api", "backend", "server", "database", "sql")),
+    ("devops", ("deploy", "ci", "k8s", "kubernetes", "docker", "cloud", "infra", "terraform", "vercel", "firebase", "aws", "azure")),
+    ("testing", ("test", "tdd", "debug", "qa")),
+    ("writing", ("writing", "doc", "blog", "content", "diagram", "docx", "pdf", "pptx", "xlsx")),
+    ("ai", ("llm", "prompt", "model", "agent", "mcp", "cuda", "nemo", "inference")),
+    ("marketing", ("marketing", "growth", "seo", "gtm", "pricing", "sales")),
+    ("data", ("data", "analytics", "chart", "viz", "pandas")),
+    ("research", ("research", "paper", "science", "bio", "chem", "physics")),
+    ("security", ("security", "auth", "vuln", "crypto")),
+    ("pm", ("product", "roadmap", "spec", "planning", "okr")),
+]
+
+def derive_tags(name, desc, category, source_id):
+    tags = set()
+    text = (name + " " + (desc or "")).lower()
+    for tag, kws in TAG_RULES:
+        if any(k in text for k in kws):
+            tags.add(tag)
+    if category:
+        tags.add(category.lower())
+    if source_id in ("anthropics", "openai", "azure", "nvidia", "vercel", "firebase", "prisma",
+                     "supabase", "stitch", "google"):
+        tags.add("official")
+    return sorted(tags)
+
+def derive_set(source, rel_path):
+    """套件归属:默认整库一个 set;嵌套库细分到包级(wshobson 的 plugins/<pkg>/、phuryn 的 pm-*)。"""
+    sid = source["id"]
+    repo = source["repo"].removeprefix("https://github.com/")
+    pkg = None
+    import re as _re
+    m = _re.search(r"(?:plugins|packages)/([^/]+)/", rel_path)
+    if m:
+        pkg = m.group(1)
+    else:
+        m2 = _re.match(r"([a-z0-9-]+?)(?:-skills)?/skills/", rel_path)
+        if m2 and sid in ("pm-skills",) and m2.group(1).startswith("pm-"):
+            pkg = m2.group(1)
+    if pkg:
+        return {"id": f"{sid}/{pkg}", "label": f"{repo.split('/')[-1]} · {pkg}", "repo": repo}
+    return {"id": sid, "label": repo.split("/")[-1], "repo": repo}
+
+
 def collect_source_entries(source, repo_dir):
     """遍历一个内容源仓库,产出原始收录条目列表。仓库级 LICENSE 作为许可兜底。"""
     base = os.path.join(repo_dir, source["subdir"])
@@ -53,6 +100,8 @@ def collect_source_entries(source, repo_dir):
         name = meta.get("name") or os.path.basename(root)
         cost = analyze_context_cost(text, root)
         compat = analyze_compat(meta, text)
+        tags = derive_tags(name, meta.get("description", ""), None, source["id"])
+        sk_set = derive_set(source, rel)
         head = ""
         try:
             from .versions import _git
@@ -75,6 +124,8 @@ def collect_source_entries(source, repo_dir):
         entries.append({
             "head": head,
             "files": files,
+            "tags": tags,
+            "set": sk_set,
             "context_cost": cost,
             "compat": compat,
             "source_id": source["id"],
@@ -128,6 +179,7 @@ def assemble(entries, aux=None, bodies=None):
             "fp": fp, "also_seen": also_seen, "url": canonical["url"],
             "context_cost": canonical["context_cost"], "compat": canonical["compat"],
             "head": canonical.get("head", ""), "files": canonical.get("files", []),
+            "tags": canonical.get("tags", []), "set": canonical.get("set"),
             "rel_path": canonical["rel_path"], "versions": [], "_repo_dir": canonical.get("repo_dir"),
         })
         for e in diff:
@@ -149,8 +201,12 @@ def assemble(entries, aux=None, bodies=None):
                 "fp": fp2, "also_seen": [], "url": e["url"],
                 "context_cost": e["context_cost"], "compat": e["compat"],
                 "head": e.get("head", ""), "files": e.get("files", []),
+                "tags": e.get("tags", []), "set": e.get("set"),
                 "rel_path": e["rel_path"], "versions": [], "_repo_dir": e.get("repo_dir"),
             })
+    for s in skills:
+        if s.get("category"):
+            s["tags"] = sorted(set((s.get("tags") or []) + [s["category"].lower()]))
     # 重名冲突:同名但内容不同的条目互相标注(同时安装会互相覆盖,平台需提醒)。
     by_name2 = {}
     for s in skills:

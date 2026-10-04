@@ -170,6 +170,19 @@ body.view-raw .diffbody{height:calc(100vh - 320px);min-height:320px}
                  font-family:var(--font-mono);font-size:10.5px;color:var(--gutter);user-select:none}
 .sec-body .dr .t{flex:1;font-family:var(--font-mono);font-size:12px;line-height:1.5;
                  white-space:pre-wrap;word-break:break-word;padding-right:10px;color:var(--plain)}
+/* 选择器:标签行 + set 徽章 */
+.tagsec{padding:8px 14px 4px;border-bottom:1px solid var(--line)}
+.tagrow{display:flex;gap:5px;flex-wrap:wrap}
+.tagchip{border:1px solid var(--line);background:none;color:var(--faint);
+         border-radius:999px;padding:2px 10px;font-size:10.5px;cursor:pointer;
+         font-family:var(--font-mono)}
+.tagchip:hover{border-color:var(--blue);color:var(--text)}
+.tagchip.on{background:var(--panel2);border-color:var(--blue);color:var(--blue)}
+.setchip{font-size:9.5px;padding:2px 7px;border-radius:5px;flex:none;
+         background:var(--panel2);border:1px solid var(--line);color:var(--dim);white-space:nowrap}
+.row .cf{color:var(--orange);font-size:9.5px;max-width:140px;overflow:hidden;
+         text-overflow:ellipsis;white-space:nowrap;flex:none}
+.row .nm b{color:var(--blue);font-weight:700}
 /* 重名冲突提醒 */
 .conflict-banner{display:flex;gap:10px;align-items:center;padding:10px 24px;
                  background:var(--orange-bg);color:var(--orange);font-size:12.5px}

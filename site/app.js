@@ -25,7 +25,8 @@ const I18N = {
       styleProc:"流程型",stylePrin:"原则型",styleMix:"混合型",
       costHead:"上下文成本",
       filesTab:"附属文件",noFiles:"纯单文件 skill(无附属文件)",same:"同",diff:"异",
-      onlyA:"仅 A",onlyB:"仅 B",clickView:"点击对比"},
+      onlyA:"仅 A",onlyB:"仅 B",clickView:"点击对比",
+      popular:"🔥 热门推荐",from:"来自",allTags:"全部",fromSet:"套件",namesakeOf:"同名 · 来自"},
   en:{search:"Search skills…",featured:"✨ Featured pairs",all:"All skills",empty:"No matching skills",
       lock:"Proprietary license · original text not reproduced",view:"View source ↗",mode:"Version mode",
       count:n=>`${n} versions total`,
@@ -39,7 +40,8 @@ const I18N = {
       styleProc:"Procedural",stylePrin:"Principled",styleMix:"Mixed",
       costHead:"Context cost",
       filesTab:"Aux files",noFiles:"Single-file skill (no aux files)",same:"same",diff:"differs",
-      onlyA:"A only",onlyB:"B only",clickView:"click to compare"},
+      onlyA:"A only",onlyB:"B only",clickView:"click to compare",
+      popular:"🔥 Popular",from:"from",allTags:"All",fromSet:"Set",namesakeOf:"namesake · from"},
 };
 /* ---------- 主题 ---------- */
 const THEMES = [{"id": "tokyo-night", "label": "Tokyo Night"}, {"id": "catppuccin-mocha", "label": "Catppuccin Mocha"}, {"id": "one-dark-pro", "label": "One Dark Pro"}, {"id": "github-light", "label": "GitHub Light"}, {"id": "one-light", "label": "One Light"}, {"id": "solarized-light", "label": "Solarized Light"}];
@@ -60,7 +62,7 @@ const state = {
   lang: localStorage.getItem("lang") || "zh",
   theme: q.get("theme") || localStorage.getItem("theme") || "tokyo-night",
   view: q.get("v") === "raw" ? "raw" : (q.get("v") === "files" ? "files" : "sections"),
-  picker: null, query: ""
+  picker: null, query: "", tagFilter: null
 };
 const t = k => { const v = I18N[state.lang][k]; return typeof v === "function" ? v(0) : v; };
 const tf = (k, ...args) => { const v = I18N[state.lang][k]; return typeof v === "function" ? v(...args) : v; };
@@ -235,14 +237,58 @@ function slotEl(side) {
   return `<div class="slot" data-side="${side}" data-slot="${side.toLowerCase()}">${inner}
     ${open ? pickerPanel(side) : ""}</div>`;
 }
+function subseq(needle, hay) {
+  let i = 0;
+  const lc = hay.toLowerCase();
+  for (const ch of needle.toLowerCase()) {
+    i = lc.indexOf(ch, i);
+    if (i === -1) return -1;
+    i += 1;
+  }
+  return 1;  // 子序列命中(非连续也行,分数低)
+}
+function fuzzyScore(q, s) {
+  const name = s.name, lcN = name.toLowerCase(), lq = q.toLowerCase();
+  if (lcN === lq) return 100;
+  if (lcN.startsWith(lq)) return 90;
+  const idx = lcN.indexOf(lq);
+  if (idx >= 0) return 70 - Math.min(idx, 20);            // 连续子串,越靠前越高
+  if ((s.desc || "").toLowerCase().includes(lq)) return 40;
+  return subseq(q, name) > 0 ? 20 : -1;                    // 子序列兜底
+}
+function popularSkills() {
+  const scored = MANIFEST.skills.map(s => ({
+    s, score: (s.installs || 0) + (s.stars || 0) / 10 }));
+  scored.sort((a, b) => b.score - a.score);
+  return scored.slice(0, 12).map(x => x.s);
+}
 function pickerPanel(side) {
   const cur = slotSkill(side);
   const ref = side === "A" ? state.refA : state.refB;
-  const qq = state.query.toLowerCase();
-  const hits = MANIFEST.skills.filter(s => !qq || s.name.toLowerCase().includes(qq) || (s.desc || "").toLowerCase().includes(qq));
+  const qq = state.query.trim();
+  let hits;
+  if (!qq) {
+    hits = popularSkills();                                  // 空查询:热门推荐
+  } else {
+    hits = MANIFEST.skills
+      .map(s => ({s, sc: fuzzyScore(qq, s)}))
+      .filter(x => x.sc >= 0)
+      .sort((a, b) => b.sc - a.sc || ((b.s.installs || 0) - (a.s.installs || 0)))
+      .map(x => x.s)
+      .filter(s => !state.tagFilter || (s.tags || []).includes(state.tagFilter));
+  }
+  if (state.tagFilter && !qq) {
+    hits = MANIFEST.skills.filter(s => (s.tags || []).includes(state.tagFilter))
+      .sort((a, b) => ((b.installs || 0) + (b.stars || 0) / 10) - ((a.installs || 0) + (a.stars || 0) / 10));
+  }
   const feats = MANIFEST.featured.map(p =>
     `<div class="feat" data-feat="${esc(p.join(" "))}">${icon("spark", 12, "var(--orange)")}
      <span class="t">${esc(p.join(" × "))}</span>${icon("arrowr", 13, "var(--gutter)")}</div>`).join("");
+  const allTags = {};
+  MANIFEST.skills.forEach(s => (s.tags || []).forEach(tg => allTags[tg] = (allTags[tg] || 0) + 1));
+  const tagChips = `<div class="tagrow"><button class="tagchip ${!state.tagFilter ? "on" : ""}" data-tag="">${esc(t("allTags"))}</button>` +
+    Object.entries(allTags).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([tg, n]) =>
+      `<button class="tagchip ${state.tagFilter === tg ? "on" : ""}" data-tag="${esc(tg)}">${esc(tg)} ${n}</button>`).join("") + `</div>`;
   let timeSec = "";
   if (cur && (cur.versions || []).length >= 2) {
     const curIdx = refIdx(cur, ref);
@@ -261,19 +307,27 @@ function pickerPanel(side) {
   }
   const rows = hits.map(s => {
     const sel = s.id === state.a || s.id === state.b;
+    let nm = esc(s.name);
+    if (qq) {
+      const i = s.name.toLowerCase().indexOf(qq.toLowerCase());
+      if (i >= 0) nm = esc(s.name.slice(0, i)) + "<b>" + esc(s.name.slice(i, i + qq.length)) + "</b>" + esc(s.name.slice(i + qq.length));
+    }
+    const conflicts = (s.name_conflicts || []);
+    const cfTip = conflicts.length
+      ? conflicts.map(id => (BY[id] || {}).source).filter(Boolean).join(" / ") : "";
     return `<div class="row" data-pick="${esc(s.id)}">
       ${sel ? `<span class="selbar"></span>` : ""}
-      <span class="nm">${esc(s.name)}</span>${licBadge(s.license_status)}
-      ${(s.name_conflicts || []).length ? `<span class="cf" title="${esc(t("conflict"))}">⚠ ${s.name_conflicts.length}</span>` : ""}
-      <span class="spacer"></span><span class="meta">${esc(s.source)}</span>
+      <span class="nm">${nm}</span>${licBadge(s.license_status)}
+      ${conflicts.length ? `<span class="cf" title="${esc(t("namesakeOf") + " " + cfTip)}">⚠ ${esc(cfTip)}</span>` : ""}
+      <span class="spacer"></span>
+      ${(s.set && s.set.id !== s.source_id) ? `<span class="setchip" title="${esc(t("fromSet"))}">${esc(s.set.label)}</span>` : ""}
+      <span class="meta">${esc(s.source)}</span>
       <span class="meta">${s.stars == null ? "" : "★" + fmt(s.stars)} ${s.installs == null ? "" : "⬇" + fmt(s.installs)} ${s.lines}${t("lines")}${s.context_cost ? ` · ${t("resident")}~${fmt(s.context_cost.resident)}` : ""}</span>
       ${sel ? icon("check", 13, "var(--blue)") : ""}</div>`;
   }).join("");
   return `<div class="picker" data-stop="1">
-    <div class="sec"><div class="sec-label">${esc(t("featured"))}</div>${feats}</div>
-    <div class="divider"></div>
-    ${timeSec}
-    <div class="sec"><div class="sec-label">${esc(t("all"))} · ${MANIFEST.skills.length}</div>
+    ${tagChips ? `<div class="tagsec">${tagChips}</div>` : ""}
+    <div class="sec"><div class="sec-label">${esc(qq ? t("all") : t("popular"))} · ${hits.length}${qq ? "" : " / " + MANIFEST.skills.length}</div>
     ${rows || `<div class="empty">${esc(t("empty"))}</div>`}</div></div>`;
 }
 function timelineEl(sk) {
@@ -591,6 +645,11 @@ function bind() {
       pk.onclick = e => e.stopPropagation();
       pk.querySelectorAll("[data-pick]").forEach(r => r.onclick = () => setSlot(side, r.getAttribute("data-pick")));
       pk.querySelectorAll("[data-time]").forEach(r => r.onclick = () => { state.picker = null; setTime(side, r.getAttribute("data-time")); });
+      pk.querySelectorAll("[data-tag]").forEach(b => b.onclick = () => {
+        state.tagFilter = b.getAttribute("data-tag") || null; render();
+        const inp2 = app.querySelector("#picker-input");
+        if (inp2) { inp2.focus(); }
+      });
       pk.querySelectorAll("[data-feat]").forEach(r => r.onclick = () => {
         const [x, y] = r.getAttribute("data-feat").split(" ");
         state.a = x; state.b = y; state.refA = "latest"; state.refB = "latest";
