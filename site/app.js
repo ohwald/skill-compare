@@ -57,7 +57,7 @@ const hasAB = q.get("a") && q.get("b");
 const state = {
   a: q.get("a") || defaultSelfCompareSkill(),
   b: hasAB ? q.get("b") : (q.get("a") || defaultSelfCompareSkill()),
-  refA: q.get("ra") || "0",
+  refA: q.get("ra") || (hasAB ? "latest" : "-1"),   /* 自比默认:latest-1 vs latest */
   refB: q.get("rb") || "latest",
   lang: localStorage.getItem("lang") || "zh",
   theme: q.get("theme") || localStorage.getItem("theme") || "tokyo-night",
@@ -81,6 +81,7 @@ function refIdx(s, ref) {
   const n = (s.versions || []).length;
   if (!n) return 0;
   if (ref === "latest") return n - 1;
+  if (ref === "-1") return Math.max(0, n - 2);
   const i = parseInt(ref, 10);
   return isNaN(i) ? n - 1 : Math.max(0, Math.min(n - 1, i));
 }
@@ -98,7 +99,7 @@ function setSlot(side, id) {
   if (cur !== id) { if (side === "A") { state.a = id; state.refA = "latest"; } else { state.b = id; state.refB = "latest"; } }
   if (isVersion()) {
     const s = skill(state.a);
-    if (refIdx(s, state.refA) === refIdx(s, state.refB)) { state.refA = 0; state.refB = "latest"; }
+    if (refIdx(s, state.refA) === refIdx(s, state.refB)) { state.refA = "-1"; state.refB = "latest"; }
   }
   syncURL(); render();
 }
@@ -449,7 +450,29 @@ function conflictBanner() {
     <span class="spacer"></span>
     <button class="cb-btn" data-conflict="${esc(others[0].id)}">${esc(t("compareNamesake"))}</button></div>`;
 }
+function versionRow(sk) {
+  /* 版本模式的顶栏:左侧库选择槽,中间两个版本下拉(默认 latest vs latest-1) */
+  const opts = (selIdx) => {
+    const n = sk.versions.length;
+    const rows = sk.versions.map((v, i) => ({i, v})).reverse();
+    return rows.map(({i, v}) => {
+      const tag = v.tags && v.tags.length ? "★ " + v.tags.join(",") + " · " : "";
+      const now = i === n - 1 ? `(${t("latest")}) ` : "";
+      return `<option value="${i}" ${i === selIdx ? "selected" : ""}>${now}${tag}${v.date} · ${v.sha.slice(0, 7)}</option>`;
+    }).join("");
+  };
+  const ia = refIdx(sk, state.refA), ib = refIdx(sk, state.refB);
+  return `<div class="vconsole">
+    <div class="vlib">${slotEl("A")}</div>
+    <div class="vsel">
+      <select class="vdrop va" aria-label="A version">${opts(ia)}</select>
+      <div class="swap" data-act="swap">${icon("swap", 16, "var(--dim)")}</div>
+      <select class="vdrop vb" aria-label="B version">${opts(ib)}</select>
+    </div></div>${timelineEl(sk)}`;
+}
 function consoleBase() {
+  const A = slotSkill("A"), B = slotSkill("B");
+  if (isVersion() && A && (A.versions || []).length >= 2) return versionRow(A);
   return `<div class="console">${slotEl("A")}<div class="swap" data-act="swap">${icon("swap", 16, "var(--dim)")}</div>${slotEl("B")}</div>`;
 }
 function headName(side) {
