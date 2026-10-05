@@ -1,6 +1,5 @@
 "use strict";
 const INLINE = JSON.parse(document.getElementById("manifest").textContent);
-/* lite 内联版缺 versions/files:异步补全;补全前用 versions_count 兜底 */
 let MANIFEST = INLINE;
 let fullReady = INLINE.lite
   ? fetch("manifest.json").then(r => r.json()).then(full => {
@@ -13,32 +12,32 @@ let fullReady = INLINE.lite
   : Promise.resolve();
 const BY = () => Object.fromEntries(MANIFEST.skills.map(s => [s.id, s]));
 
-/* ---------- i18n ---------- */
 const I18N = {
   zh:{search:"搜索 skill…",featured:"✨ 精选组合",all:"全部 skill",empty:"没有匹配的 skill",
       lock:"专有许可 · 不转载原文",view:"查看原文 ↗",mode:"版本模式",
       count:n=>`共 ${n} 个版本`,full:"全文可比",deg:"专有 · 仅摘要",latest:"最新",
       times:"时间点",viewSec:"结构对比",viewRaw:"原文 diff",viewFiles:"附属文件",toc:"结构",
-      lines:"行",modeHistory:"历史对比",modeCompare:"两两对比",verA:"基准版本 (A)",verB:"对比版本 (B)",
+      lines:"行",modeHistory:"历史对比",modeCompare:"两两对比",
       conflictWarn:(name,n)=>`重名提醒:「${name}」有 ${n} 个同名版本,同时安装会互相覆盖:`,
       compareNamesake:"对比同名版本",conflict:"重名",namesakeOf:"同名 · 来自",
       resident:"常驻",trigger:"触发",files:"文件",est:"静态估算,非实测",
       bindCC:"绑定 Claude Code",bindPort:"跨 harness 通用",
-      styleProc:"流程型",stylePrin:"原则型",styleMix:"混合型",noVersions:"该 skill 仅有 1 个版本,无历史可对比"},
+      styleProc:"流程型",stylePrin:"原则型",styleMix:"混合型",
+      popular:"🔥 热门推荐",hint:"点击时间轴圆点切换 B 侧时间点;★ 为上游 tag"},
   en:{search:"Search skills…",featured:"✨ Featured pairs",all:"All skills",empty:"No matching skills",
       lock:"Proprietary license · original text not reproduced",view:"View source ↗",mode:"Version mode",
       count:n=>`${n} versions`,full:"Full text",deg:"Proprietary · summary",latest:"Latest",
       times:"Time points",viewSec:"Structure",viewRaw:"Raw diff",viewFiles:"Aux files",toc:"Structure",
-      lines:"lines",modeHistory:"History",modeCompare:"Compare two",verA:"Base (A)",verB:"Compare (B)",
+      lines:"lines",modeHistory:"History",modeCompare:"Compare two",
       conflictWarn:(name,n)=>`Name conflict: "${name}" has ${n} same-named versions — installing both would collide:`,
       compareNamesake:"Compare namesakes",conflict:"name conflict",namesakeOf:"namesake · from",
       resident:"Resident",trigger:"Trigger",files:"Files",est:"static estimate, not measured",
       bindCC:"Claude Code bound",bindPort:"Harness-portable",
-      styleProc:"Procedural",stylePrin:"Principled",styleMix:"Mixed",noVersions:"Single version, no history to compare"}
+      styleProc:"Procedural",stylePrin:"Principled",styleMix:"Mixed",
+      popular:"🔥 Popular",hint:"Click timeline dots to switch side B; switch side A in the slot panel's Time points; ★ marks upstream tags"}
 };
-/* ---------- 主题 ---------- */
 const THEMES = __THEME_LIST__;
-/* ---------- 状态 ---------- */
+
 const q = new URLSearchParams(location.search);
 const hasAB = q.get("a") && q.get("b");
 function defaultSelfCompareSkill() {
@@ -49,7 +48,8 @@ const state = {
   mode: q.get("m") === "cmp" ? "compare" : "history",
   a: q.get("a") || defaultSelfCompareSkill(),
   b: hasAB ? q.get("b") : (q.get("a") || defaultSelfCompareSkill()),
-  refA: q.get("ra") || "-1", refB: q.get("rb") || "latest",
+  refA: q.get("ra") || (hasAB ? "latest" : "-1"),
+  refB: q.get("rb") || "latest",
   lang: localStorage.getItem("lang") || "zh",
   theme: q.get("theme") || localStorage.getItem("theme") || "tokyo-night",
   view: q.get("v") === "raw" ? "raw" : "sections",
@@ -104,7 +104,6 @@ function setTime(side, ref) {
 function setMode(m) {
   state.mode = m;
   if (m === "compare") {
-    /* 从自比切两两对比:B 换成另一个热门 skill */
     if (state.a === state.b) {
       const alt = MANIFEST.skills.find(s => s.id !== state.a && s.license_status === "full");
       state.b = alt ? alt.id : state.b;
@@ -118,7 +117,6 @@ function setTheme(th) { state.theme = th; localStorage.setItem("theme", th);
   document.documentElement.setAttribute("data-theme", th); syncURL(); }
 function setView(v) { state.view = v; syncURL(); render(); }
 
-/* ---------- 图标 ---------- */
 const IC = {
   logo:'<path d="M13 5h6M13 9h6M6 15h6M6 19h6"/><circle cx="6" cy="7" r="2"/><circle cx="18" cy="17" r="2"/>',
   search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
@@ -153,10 +151,6 @@ function compatChip(s) {
   return `${bind}<span class="stylechip">${esc(t(sk))}</span>`;
 }
 
-/* ---------- 结构分段(官方约定:FM + 标题层级,围栏不拆) ---------- */
-function slugify(s) {
-  return s.toLowerCase().replace(/[^a-z0-9\u4e00-\u9fa5]+/g, "-").replace(/^-+|-+$/g, "") || "sec";
-}
 function splitSections(raw) {
   const lines = raw.split("\n");
   const secs = []; let cur = null, inFence = false, fm = false;
@@ -188,22 +182,16 @@ function splitSections(raw) {
   }
   return secs.filter(s => seen[s.slug]);
 }
-function secHtml(side, sec, i) {
+function slugify(s) {
+  return s.toLowerCase().replace(/[^a-z0-9\u4e00-\u9fa5]+/g, "-").replace(/^-+|-+$/g, "") || "sec";
+}
+function secHtml(side, sec) {
   const rows = sec.lines.map((l, j) =>
     `<div class="dr"><span class="g">${j + 1}</span><span class="t">${esc(l) || " "}</span></div>`).join("");
-  const ch = sec.changes;
-  const hasChg = ch && (ch.added || ch.removed || ch.onlyA || ch.onlyB);
-  const collapsed = (sec.collapsed && !hasChg) ? " collapsed" : "";
-  const chg = hasChg
-    ? (ch.onlyA ? `<span class="chg only">A 独有</span>`
-       : ch.onlyB ? `<span class="chg only">B 独有</span>`
-       : `<span class="chg">${ch.added ? `<b class="up">+${ch.added}</b>` : ""}${ch.added && ch.removed ? " " : ""}${ch.removed ? `<b class="dn">−${ch.removed}</b>` : ""}</span>`)
-    : "";
-  const caret = `<span class="tw">${icon("chev", 12, "var(--faint)")}</span>`;
+  const collapsed = sec.collapsed ? " collapsed" : "";
   return `<div class="sec${collapsed}" id="sec-${side}-${sec.slug}">
-    <div class="sec-band" data-toggle="${esc(sec.slug)}">${caret}
+    <div class="sec-band" data-toggle="${esc(sec.slug)}"><span class="tw">${icon("chev", 12, "var(--faint)")}</span>
       <span class="lvl">${sec.lvl}</span><span class="st">${esc(sec.title)}</span>
-      ${chg}
       <span class="cnt">${sec.lines.length} ${t("lines")}</span></div>
     <div class="sec-body">${rows}</div></div>`;
 }
@@ -211,13 +199,12 @@ function autoCollapse(secs) {
   return secs.map((s, i) => ({...s, collapsed: (i >= 3 || s.level >= 3) && !(i === 0)}));
 }
 
-/* ---------- 渲染 ---------- */
 let renderSeq = 0, monacoEd = null;
 const app = document.getElementById("app");
 function topbar() {
   const opts = THEMES.map(th => `<option value="${th.id}" ${th.id === state.theme ? "selected" : ""}>${esc(th.label)}</option>`).join("");
   return `<div class="topbar">
-    <div class="brand">${icon("logo", 17, "var(--blue)")}<span>Skill History</span></div>
+    <div class="brand">${icon("logo", 17, "var(--blue)")}<span class="bn">Skill History</span></div>
     <div class="topright">
       <div class="lang">
         <button class="${state.lang === "zh" ? "on" : ""}" data-act="lang-zh">中文</button>
@@ -249,7 +236,7 @@ function pickerPanel(side) {
     hits = MANIFEST.skills.map(s => ({s, sc: (s.installs || 0) + (s.stars || 0) / 10}))
       .sort((a, b) => b.sc - a.sc).slice(0, 12).map(x => x.s);
   } else {
-    const fuzzyScore = s => {
+    const fs = s => {
       const lc = s.name.toLowerCase(), l = qq.toLowerCase();
       if (lc === l) return 100;
       if (lc.startsWith(l)) return 90;
@@ -259,7 +246,7 @@ function pickerPanel(side) {
       let k = 0; for (const chr of l) { k = lc.indexOf(chr, k); if (k === -1) return -1; k += 1; }
       return 20;
     };
-    hits = MANIFEST.skills.map(s => ({s, sc: fuzzyScore(s)})).filter(x => x.sc >= 0)
+    hits = MANIFEST.skills.map(s => ({s, sc: fs(s)})).filter(x => x.sc >= 0)
       .sort((a, b) => b.sc - a.sc).map(x => x.s);
   }
   if (state.tagFilter) hits = hits.filter(s => (s.tags || []).includes(state.tagFilter));
@@ -316,6 +303,9 @@ function pickerPanel(side) {
     <div class="sec"><div class="sec-label">${esc(qq ? t("all") : t("popular"))} · ${hits.length}${qq ? "" : " / " + MANIFEST.skills.length}</div>
     ${rows || `<div class="empty">${esc(t("empty"))}</div>`}</div></div>`;
 }
+function licBadge(lic) {
+  return lic === "full" ? "" : `<span class="lic-badge deg">${esc(t("deg"))}</span>`;
+}
 function timelineEl(sk) {
   const vs = sk.versions || [];
   const n = vs.length;
@@ -324,97 +314,23 @@ function timelineEl(sk) {
   const pos = i => (i / (n - 1)) * 100;
   const stars = vs.map((v, i) => v.tags && v.tags.length
     ? `<span class="t-star" style="left:${pos(i)}%" title="${esc(v.tags.join(", "))}">★</span>` : "").join("");
-  return `<div class="t-slider">
-    <div class="t-line"></div>${stars}
+  let range = null;
+  const lo = Math.min(ia, ib) + 1, hi = Math.max(ia, ib);
+  for (let i = lo; i <= hi; i++) {
+    const c = vs[i] && vs[i].change;
+    if (c) { range = range || {added: 0, removed: 0}; range.added += c.added; range.removed += c.removed; }
+  }
+  const rangeChg = range ? `<span class="chg"><b class="up">+${range.added}</b><b class="dn">−${range.removed}</b></span>` : "";
+  return `<div class="tl-slider">
+    <div class="line"></div>${stars}
     <input type="range" class="ts-a" min="0" max="${n - 1}" step="1" value="${ia}"
            style="z-index:${ia >= ib ? 3 : 4}" aria-label="A time point">
     <input type="range" class="ts-b" min="0" max="${n - 1}" step="1" value="${ib}"
            style="z-index:${ib > ia ? 4 : 3}" aria-label="B time point">
   </div>
-  ` + rangeBadge(vs, ia, ib);
-}
-function rangeBadge(vs, ia, ib) {
-  const lo = Math.min(ia, ib) + 1, hi = Math.max(ia, ib);
-  let added = 0, removed = 0;
-  for (let i = lo; i <= hi; i++) {
-    const c = vs[i] && vs[i].change;
-    if (c) { added += c.added; removed += c.removed; }
-  }
-  if (!(added || removed)) return `<div class="t-dates"><span class="da">${esc(vs[ia].date + " · " + vs[ia].sha)}</span>
+  <div class="t-dates"><span class="da">${esc(vs[ia].date + " · " + vs[ia].sha)}</span>
+  ${rangeChg}
   <span class="db">${esc(vs[ib].date + " · " + vs[ib].sha)}</span></div>`;
-  return `<div class="t-dates"><span class="da">${esc(vs[ia].date + " · " + vs[ia].sha)}</span>
-  <span class="chg"><b class="up">+${added}</b><b class="dn">−${removed}</b></span>
-  <span class="db">${esc(vs[ib].date + " · " + vs[ib].sha)}</span></div>`;
-}
-/* ---------- 控制台 ---------- */
-function vpanel(sk, side, curIdx) {
-  const n = sk.versions.length;
-  const rows = [{idx: "latest", v: sk.versions[n - 1]}]
-    .concat(sk.versions.slice(0, -1).reverse().map((v, ri) => ({idx: String(n - 1 - ri), v})));
-  return `<div class="vpanel" data-stop="1">
-    ${rows.map(({idx, v}) => {
-      const cur = String(curIdx) === idx;
-      const tags = v.tags && v.tags.length
-        ? v.tags[0] + (v.tags.length > 1 ? ` +${v.tags.length - 1}` : "") : "";
-      const chg = v.change ? `<span class="chg"><b class="up">+${v.change.added}</b><b class="dn">−${v.change.removed}</b></span>` : "";
-      return `<div class="vrow ${cur ? "cur" : ""}" data-vsel="${idx}">
-        ${tags ? `<span class="vt">${esc("★ " + tags)}</span>` : ""}
-        <span class="vd">${esc(v.date + " · " + v.sha.slice(0, 7))}</span>
-        ${idx === String(n - 1) ? `<span class="vl">${esc(t("latest"))}</span>` : ""}
-        ${chg}
-        <span class="meta">${v.lines} ${esc(t("lines"))}</span>
-        ${cur ? icon("check", 13, "var(--blue)") : ""}</div>`;
-    }).join("")}</div>`;
-}
-function historyConsole(sk) {
-  const vbtn = (side) => {
-    const idx = refIdx(sk, side === "A" ? state.refA : state.refB);
-    const v = sk.versions[idx];
-    const isLatest = idx === sk.versions.length - 1;
-    const tag = v.tags && v.tags.length ? v.tags[0] : "";
-    const label = `${tag ? "★ " + tag + " · " : (isLatest ? "" : "")}${v.date} · ${v.sha.slice(0, 7)}`;
-    const open = state.picker === "v" + side;
-    return `<div class="vwrap" data-side="${side}">
-      <button class="vbtn ${side === "A" ? "va" : "vb"}" data-vopen="${side}">
-        ${tag ? `<span class="vtagchip">${esc("★ " + tag)}</span>` : ""}
-        <span class="mono">${esc(v.date + " · " + v.sha.slice(0, 7))}</span>
-        ${isLatest ? `<span class="lat">(${esc(t("latest"))})</span>` : ""}${icon("chev", 14, "var(--dim)")}
-      </button>
-      ${open ? vpanel(sk, side, idx) : ""}
-    </div>`;
-  };
-  return `<div class="vconsole">
-    <div class="vrow1">
-      <div class="slot" data-slot="a">${slotInner("A", sk)}</div>
-      <div class="mode-tabs">
-        <button class="${state.mode === "history" ? "on" : ""}" data-mode="history">${esc(t("modeHistory"))}</button>
-        <button data-mode="compare">${esc(t("modeCompare"))}</button>
-      </div>
-    </div>
-    <div class="vrow2">
-      ${vbtn("A")}<div class="swap" data-act="swap">${icon("swap", 16, "var(--dim)")}</div>${vbtn("B")}
-    </div>
-    ${timelineEl(sk)}
-  </div>`;
-}
-function slotInner(side, skOverride) {
-  const s = skOverride || slotSkill(side);
-  const color = side === "A" ? "var(--blue)" : "var(--purple)";
-  const open = state.picker === side.toLowerCase();
-  const warn = s && s.license_status === "degraded" ? `<span class="warn">${esc(t("deg"))}</span>` : "";
-  const inner = open
-    ? `<span class="badge">${side}</span>${icon("search", 15, color)}
-       <input id="picker-input" placeholder="${esc(t("search"))}" autocomplete="off">`
-    : `<span class="badge">${side}</span>${icon(state.mode === "history" ? "hist" : "search", 15, color)}
-       <span class="name">${esc(s ? s.name : "—")}</span>${warn}<span class="spacer"></span>${icon("chev", 16, color)}`;
-  return inner + (open ? pickerPanel(side) : "");
-}
-function compareConsole() {
-  return `<div class="console">
-    <div class="mode-tabs"><button data-mode="history">${esc(t("modeHistory"))}</button>
-      <button class="on" data-mode="compare">${esc(t("modeCompare"))}</button></div>
-    ${slotEl("A")}<div class="swap" data-act="swap">${icon("swap", 16, "var(--dim)")}</div>${slotEl("B")}
-  </div>`;
 }
 function render() {
   renderSeq++;
@@ -422,41 +338,50 @@ function render() {
   document.documentElement.lang = state.lang === "zh" ? "zh" : "en";
   document.body.className = "view-" + state.view;
   const A = skill(state.a), B = skill(state.b);
-  const history = state.mode === "history" && A && (A.versions || []).length >= 2;
-  const consoleHtml = history
-    ? historyConsole(A)
-    : (A && B && A !== B
-        ? `<div class="console"><div class="mode-tabs"><button data-mode="history">${esc(t("modeHistory"))}</button>
-           <button class="on">${esc(t("modeCompare"))}</button></div>
-           ${slotEl("A")}<div class="swap" data-act="swap">${icon("swap", 16, "var(--dim)")}</div>${slotEl("B")}</div>`
-        : compareConsole());
+  const isVersion = state.mode === "history" && A && A === B && (A.versions || []).length >= 2;
+  /* 控制栏:始终显示库槽 */
+  let consoleHtml = `<div class="controls">${slotEl("A")}<div class="swap" data-act="swap">${icon("swap", 16, "var(--dim)")}</div>${slotEl("B")}</div>`;
+  if (isVersion) {
+    consoleHtml += timelineEl(A);
+  }
+  const banner = conflictBanner(A);
   let inner, heads = "";
-  if (A && B && A !== B) {
-    heads = `<div class="colheads">${colhead("A", A, false)}${colhead("B", B, true)}</div>`;
+  if (!A || !B) { inner = `<div class="diffbody"></div>`; heads = ""; }
+  else {
+    const isSame = A === B;
+    /* 列头:横向模式有元数据行,自比模式显示两个时间点标识 */
+    const metaSide = withMeta => withMeta
+      ? licBadge(A.license_status) + costChip(A) + compatChip(A) : "";
+    const nmA = isSame
+      ? (state.refA === "latest" ? t("latest") : refLabel(A, state.refA))
+      : A.name;
+    const nmB = isSame
+      ? (state.refB === "latest" ? t("latest") : refLabel(B, state.refB))
+      : B.name;
+    heads = `<div class="colheads">` +
+      colhead("A", isSame ? nmA : A.name, !isSame, isSame ? null : licBadge(A.license_status) + costChip(A) + compatChip(A)) +
+      colhead("B", isSame ? nmB : B.name, !isSame, isSame ? null : licBadge(B.license_status) + costChip(B) + compatChip(B)) +
+      `</div>`;
     if (A.license_status === "full" && B.license_status === "full")
-      inner = viewbar() + `<div class="toc hidden" id="toc"></div><div class="diffbody"><div class="loading" style="width:100%">…</div></div>`;
+      inner = viewbar() + `<div class="diffbody"><div class="loading" style="width:100%">…</div></div>`;
     else
       inner = `<div class="diffbody">${degradedPane(A)}${degradedPane(B)}</div>`;
-  } else if (A) {
-    heads = `<div class="colheads">${colhead("A", A, false)}</div>`;
-    inner = viewbar() + `<div class="toc hidden" id="toc"></div><div class="diffbody"><div class="loading" style="width:100%">…</div></div>`;
-  } else inner = `<div class="diffbody"></div>`;
-  app.innerHTML = topbar() + consoleHtml + conflictBanner(A) +
+  }
+  app.innerHTML = topbar() + consoleHtml + banner +
     `<div class="hero-wrap"><div class="hero">${heads}${inner}</div></div>`;
   bind();
   mountContent();
 }
-function colhead(side, s, withMeta) {
+function colhead(side, displayName, withMeta, metaHtml) {
   const color = side === "A" ? "var(--blue)" : "var(--purple)";
-  const lb = withMeta ? "" : refLabel(s, side === "A" ? state.refA : state.refB);
   return `<div class="colhead" data-side="${side}"><div class="accent ${side === "A" ? "a" : "b"}"></div>
     <div class="in"><span class="dot" style="background:${color}"></span>
-    <span class="nm">${esc(lb ? s.name + " @ " + lb : s.name)}</span>
-    ${withMeta ? licBadge(s.license_status) + costChip(s) + compatChip(s) : ""}</div></div>`;
+    <span class="nm">${esc(displayName)}</span>
+    ${metaHtml || ""}</div></div>`;
 }
 function degradedPane(s) {
   return s.license_status === "full"
-    ? `<div class="diffcol" data-side="s"><div class="loading" style="width:100%">…</div></div>`
+    ? `<div class="diffcol"><div class="loading" style="width:100%">…</div></div>`
     : `<div class="lockcol"><div class="circle">${icon("lock", 20, "var(--orange)")}</div>
        <div class="note">${esc(t("lock"))}</div>
        <button class="ghost" data-src="${esc(s.url)}">${esc(t("view"))}</button></div>`;
@@ -478,7 +403,6 @@ function conflictBanner(s) {
     <span class="spacer"></span>
     <button class="cb-btn" data-conflict="${esc(others[0].id)}">${esc(t("compareNamesake"))}</button></div>`;
 }
-/* ---------- 正文加载 ---------- */
 const bodyCache = new Map();
 let bodiesMap = null;
 function fetchBody(fp) {
@@ -490,7 +414,7 @@ function fetchBody(fp) {
     p = url ? fetch(url).then(r => r.ok ? r.text() : "") : Promise.resolve("");
   } else {
     p = fetch("bodies/" + fp + ".md").then(r => {
-      if (r.status === 404) {  // link 模式:正文在 bodies.json 映射里
+      if (r.status === 404) {
         return fetch("bodies.json").then(m => {
           if (!m.ok) return "";
           bodiesMap = m.json();
@@ -527,28 +451,8 @@ function rowsHtml(text) {
   return text.split("\n").map((l, i) =>
     `<div class="dr"><span class="g">${i + 1}</span><span class="t">${esc(l) || " "}</span></div>`).join("");
 }
-function markChanges(secsA, secsB) {
-  /* 同名节(按 slug 对齐)做行集合 diff,给两侧节标 +added/−removed 计数 */
-  const bySlug = {};
-  secsB.forEach(s => bySlug[s.slug] = s);
-  secsA.forEach(sa => {
-    const sb = bySlug[sa.slug];
-    if (!sb) { sa.changes = {added: null, removed: null, onlyA: true}; return; }
-    const la = new Set(sa.lines.map(l => l.trim()).filter(Boolean));
-    const lb2 = new Set(sb.lines.map(l => l.trim()).filter(Boolean));
-    let added = 0, removed = 0;
-    la.forEach(l => { if (!lb2.has(l)) removed++; });
-    lb2.forEach(l => { if (!la.has(l)) added++; });
-    if (added || removed) sa.changes = {added, removed};
-    else sa.changes = null;
-    if (added || removed) sb.changes = {added, removed};
-    else sb.changes = null;
-  });
-  secsB.forEach(sb => { if (!secsA.some(sa => sa.slug === sb.slug)) sb.changes = {added: null, removed: null, onlyB: true}; });
-}
 function mountSections(ra, rb, my) {
   const secA = autoCollapse(splitSections(ra)), secB = autoCollapse(splitSections(rb));
-  markChanges(secA, secB);
   const bd = document.querySelector(".diffbody");
   if (!bd || my !== renderSeq) return;
   bd.innerHTML = "";
@@ -605,7 +509,6 @@ function initMonaco(ta, tb, my) {
     }
   } catch (e) { fail(); }
 }
-/* ---------- 事件 ---------- */
 function bind() {
   app.querySelectorAll("[data-act]").forEach(el => {
     const act = el.getAttribute("data-act");
@@ -657,51 +560,16 @@ function bind() {
   };
   app.querySelectorAll(".ts-a,.ts-b").forEach(inp => {
     const isA = inp.classList.contains("ts-a");
-    const sk = skill(state.a);
     inp.oninput = () => {
       let v = +inp.value;
-      if (isA) { const b = refIdx(sk, state.refB); if (v > b) { v = b; inp.value = v; } state.refA = String(v); }
-      else { const a = refIdx(sk, state.refA); if (v < a) { v = a; inp.value = v; } state.refB = String(v); }
-      lightUpdate();
+      if (isA) { const b = refIdx(skill(state.a), state.refB); if (v > b) { v = b; inp.value = v; } state.refA = String(v); }
+      else { const a = refIdx(skill(state.a), state.refA); if (v < a) { v = a; inp.value = v; } state.refB = String(v); }
+      syncURL();
     };
     inp.onchange = () => { syncURL(); render(); };
   });
-  app.querySelectorAll("[data-vopen]").forEach(b => b.onclick = e => {
-    e.stopPropagation();
-    const side = b.getAttribute("data-vopen");
-    state.picker = state.picker === "v" + side ? null : "v" + side;
-    render();
-  });
-  app.querySelectorAll(".vpanel").forEach(p => p.onclick = e => e.stopPropagation());
-  app.querySelectorAll("[data-vsel]").forEach(r => r.onclick = () => {
-    state.picker = null;
-    setTime("B", r.getAttribute("data-vsel"));
-  });
   app.querySelectorAll("[data-conflict]").forEach(b => b.onclick = () => { setMode("compare"); setSlot("B", b.getAttribute("data-conflict")); });
   app.querySelectorAll("[data-src]").forEach(b => b.onclick = () => window.open(b.getAttribute("data-src"), "_blank"));
-}
-function rangeDiff(vs, ia, ib) {
-  const lo = Math.min(ia, ib) + 1, hi = Math.max(ia, ib);
-  if (lo > hi) return null;
-  let added = 0, removed = 0;
-  for (let i = lo; i <= hi; i++) {
-    const c = vs[i] && vs[i].change;
-    if (c) { added += c.added; removed += c.removed; }
-  }
-  return (added || removed) ? {added, removed} : null;
-}
-function lightUpdate() {
-  const sk = skill(state.a); if (!sk) return;
-  const va = resolveV("A"), vb = resolveV("B");
-  const da = app.querySelector(".t-dates .da"), db = app.querySelector(".t-dates .db");
-  if (da && va) da.textContent = va.date + " · " + va.sha;
-  if (db && vb) db.textContent = vb.date + " · " + vb.sha;
-  document.querySelectorAll(".colhead .nm").forEach((el, i) => el.textContent = headName(i === 0 ? "A" : "B"));
-}
-function headName(side) {
-  const s = slotSkill(side); if (!s) return "—";
-  const lb = refLabel(s, side === "A" ? state.refA : state.refB);
-  return lb ? `${s.name} @ ${lb}` : s.name;
 }
 document.documentElement.setAttribute("data-theme", state.theme);
 document.body.className = "view-" + state.view;
