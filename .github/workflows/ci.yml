@@ -38,8 +38,8 @@ jobs:
           node-version: "22"
       - name: Frontend JS syntax gate
         run: node --check template/app.js
-      - name: No leftover template placeholders
-        run: "! grep -rE '__[A-Z_]+__' template/ pipeline/"
+      - name: No leftover template placeholders in artifacts
+        run: "! grep -rEl '__[A-Z_]+__' /tmp/site-smoke/"
       - name: Summary
         if: always()
         run: echo "CI = tests + build smoke + JS gate + placeholder gate"
