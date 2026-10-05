@@ -82,7 +82,7 @@ function resolveV(side) {
   return (s.versions || [])[refIdx(s, side === "A" ? state.refA : state.refB)] || null;
 }
 function refLabel(s, ref) {
-  if (s.versions.length < 2) return "";
+  if (!s.versions || s.versions.length < 2) return "";
   const v = s.versions[refIdx(s, ref)];
   const tags = v.tags && v.tags.length ? "★" + (v.tags.length === 1 ? v.tags[0] : v.tags[0] + `+${v.tags.length - 1}`) : "";
   return tags ? tags : v.date.slice(5) + " · " + v.sha.slice(0, 6);
@@ -328,6 +328,23 @@ function timelineEl(sk) {
   <span class="db">${esc(vs[ib].date + " · " + vs[ib].sha)}</span></div>`;
 }
 /* ---------- 控制台 ---------- */
+function vpanel(sk, side, curIdx) {
+  const n = sk.versions.length;
+  const rows = [{idx: "latest", v: sk.versions[n - 1]}]
+    .concat(sk.versions.slice(0, -1).reverse().map((v, ri) => ({idx: String(n - 1 - ri), v})));
+  return `<div class="vpanel" data-stop="1">
+    ${rows.map(({idx, v}) => {
+      const cur = String(curIdx) === idx;
+      const tags = v.tags && v.tags.length
+        ? v.tags[0] + (v.tags.length > 1 ? ` +${v.tags.length - 1}` : "") : "";
+      return `<div class="vrow ${cur ? "cur" : ""}" data-vsel="${idx}">
+        ${tags ? `<span class="vt">${esc("★ " + tags)}</span>` : ""}
+        <span class="vd">${esc(v.date + " · " + v.sha.slice(0, 7))}</span>
+        ${idx === "latest" || idx === String(n - 1) ? `<span class="vl">${esc(t("latest"))}</span>` : ""}
+        <span class="meta">${v.lines} ${esc(t("lines"))}</span>
+        ${cur ? icon("check", 13, "var(--blue)") : ""}</div>`;
+    }).join("")}</div>`;
+}
 function historyConsole(sk) {
   const vbtn = (side) => {
     const idx = refIdx(sk, side === "A" ? state.refA : state.refB);
@@ -608,6 +625,11 @@ function bind() {
     const side = b.getAttribute("data-vopen");
     state.picker = state.picker === "v" + side ? null : "v" + side;
     render();
+  });
+  app.querySelectorAll(".vpanel").forEach(p => p.onclick = e => e.stopPropagation());
+  app.querySelectorAll("[data-vsel]").forEach(r => r.onclick = () => {
+    state.picker = null;
+    setTime("B", r.getAttribute("data-vsel"));
   });
   app.querySelectorAll("[data-conflict]").forEach(b => b.onclick = () => { setMode("compare"); setSlot("B", b.getAttribute("data-conflict")); });
   app.querySelectorAll("[data-src]").forEach(b => b.onclick = () => window.open(b.getAttribute("data-src"), "_blank"));
