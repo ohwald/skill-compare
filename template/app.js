@@ -385,7 +385,7 @@ function historyConsole(sk) {
   };
   return `<div class="vconsole">
     <div class="vrow1">
-      <div class="slot" data-slot="A">${slotInner("A", sk)}</div>
+      <div class="slot" data-slot="a">${slotInner("A", sk)}</div>
       <div class="mode-tabs">
         <button class="${state.mode === "history" ? "on" : ""}" data-mode="history">${esc(t("modeHistory"))}</button>
         <button data-mode="compare">${esc(t("modeCompare"))}</button>
@@ -557,6 +557,10 @@ function mountSections(ra, rb, my) {
   secA.forEach(s => a.insertAdjacentHTML("beforeend", secHtml("A", s)));
   secB.forEach(s => b.insertAdjacentHTML("beforeend", secHtml("B", s)));
   bd.appendChild(a); bd.appendChild(b);
+  a.querySelectorAll(".sec-band[data-toggle]").forEach(band => band.onclick = () =>
+    band.parentElement.classList.toggle("collapsed"));
+  b.querySelectorAll(".sec-band[data-toggle]").forEach(band => band.onclick = () =>
+    band.parentElement.classList.toggle("collapsed"));
   attachSync();
 }
 let syncing = false;
@@ -626,6 +630,7 @@ function bind() {
       inp.onkeydown = e => { if (e.key === "Escape") { state.picker = null; state.query = ""; render(); } };
     } else {
       el.onclick = e => { if (e.target.closest(".picker")) return;
+        e.stopPropagation();
         state.picker = side; state.query = ""; render(); };
     }
     const pk = el.querySelector(".picker");
@@ -645,7 +650,8 @@ function bind() {
     }
   });
   document.onclick = e => {
-    if (state.picker && !e.target.closest(".slot") && !e.target.closest(".picker")) {
+    if (state.picker && !e.target.closest(".slot") && !e.target.closest(".picker")
+        && !e.target.closest(".vwrap")) {
       state.picker = null; state.query = ""; render();
     }
   };
@@ -661,6 +667,7 @@ function bind() {
     inp.onchange = () => { syncURL(); render(); };
   });
   app.querySelectorAll("[data-vopen]").forEach(b => b.onclick = e => {
+    e.stopPropagation();
     const side = b.getAttribute("data-vopen");
     state.picker = state.picker === "v" + side ? null : "v" + side;
     render();
