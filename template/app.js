@@ -192,11 +192,19 @@ function splitSections(raw) {
 function secHtml(side, sec, i) {
   const rows = sec.lines.map((l, j) =>
     `<div class="dr"><span class="g">${j + 1}</span><span class="t">${esc(l) || " "}</span></div>`).join("");
-  const collapsed = sec.collapsed ? " collapsed" : "";
+  const ch = sec.changes;
+  const hasChg = ch && (ch.added || ch.removed || ch.onlyA || ch.onlyB);
+  const collapsed = (sec.collapsed && !hasChg) ? " collapsed" : "";
+  const chg = hasChg
+    ? (ch.onlyA ? `<span class="chg only">A 独有</span>`
+       : ch.onlyB ? `<span class="chg only">B 独有</span>`
+       : `<span class="chg">${ch.added ? `<b class="up">+${ch.added}</b>` : ""}${ch.added && ch.removed ? " " : ""}${ch.removed ? `<b class="dn">−${ch.removed}</b>` : ""}</span>`)
+    : "";
   const caret = `<span class="tw">${icon("chev", 12, "var(--faint)")}</span>`;
   return `<div class="sec${collapsed}" id="sec-${side}-${sec.slug}">
     <div class="sec-band" data-toggle="${esc(sec.slug)}">${caret}
       <span class="lvl">${sec.lvl}</span><span class="st">${esc(sec.title)}</span>
+      ${chg}
       <span class="cnt">${sec.lines.length} ${t("lines")}</span></div>
     <div class="sec-body">${rows}</div></div>`;
 }
@@ -441,7 +449,7 @@ function degradedPane(s) {
        <button class="ghost" data-src="${esc(s.url)}">${esc(t("view"))}</button></div>`;
 }
 function viewbar() {
-  return `<div class="viewbar"><span class="lbl">${esc(t("toc"))}</span>
+  return `<div class="viewbar">
     <div class="vtoggle">
       <button class="${state.view === "sections" ? "on" : ""}" data-view="sections">${esc(t("viewSec"))}</button>
       <button class="${state.view === "raw" ? "on" : ""}" data-view="raw">${esc(t("viewRaw"))}</button>
@@ -489,8 +497,28 @@ function rowsHtml(text) {
   return text.split("\n").map((l, i) =>
     `<div class="dr"><span class="g">${i + 1}</span><span class="t">${esc(l) || " "}</span></div>`).join("");
 }
+function markChanges(secsA, secsB) {
+  /* 同名节(按 slug 对齐)做行集合 diff,给两侧节标 +added/−removed 计数 */
+  const bySlug = {};
+  secsB.forEach(s => bySlug[s.slug] = s);
+  secsA.forEach(sa => {
+    const sb = bySlug[sa.slug];
+    if (!sb) { sa.changes = {added: null, removed: null, onlyA: true}; return; }
+    const la = new Set(sa.lines.map(l => l.trim()).filter(Boolean));
+    const lb2 = new Set(sb.lines.map(l => l.trim()).filter(Boolean));
+    let added = 0, removed = 0;
+    la.forEach(l => { if (!lb2.has(l)) removed++; });
+    lb2.forEach(l => { if (!la.has(l)) added++; });
+    if (added || removed) sa.changes = {added, removed};
+    else sa.changes = null;
+    if (added || removed) sb.changes = {added, removed};
+    else sb.changes = null;
+  });
+  secsB.forEach(sb => { if (!secsA.some(sa => sa.slug === sb.slug)) sb.changes = {added: null, removed: null, onlyB: true}; });
+}
 function mountSections(ra, rb, my) {
   const secA = autoCollapse(splitSections(ra)), secB = autoCollapse(splitSections(rb));
+  markChanges(secA, secB);
   const bd = document.querySelector(".diffbody");
   if (!bd || my !== renderSeq) return;
   bd.innerHTML = "";
@@ -499,26 +527,7 @@ function mountSections(ra, rb, my) {
   secA.forEach(s => a.insertAdjacentHTML("beforeend", secHtml("A", s)));
   secB.forEach(s => b.insertAdjacentHTML("beforeend", secHtml("B", s)));
   bd.appendChild(a); bd.appendChild(b);
-  buildToc(secA, secB);
   attachSync();
-}
-function buildToc(secA, secB) {
-  const toc = document.getElementById("toc");
-  if (!toc) return;
-  const map = new Map();
-  const key = s => s.slug + "@" + s.lvl;
-  secA.forEach(s => { const k = key(s); if (!map.has(k)) map.set(k, {slug: s.slug, title: s.title, a: true, b: false}); else map.get(k).a = true; });
-  secB.forEach(s => { const k = key(s); if (!map.has(k)) map.set(k, {slug: s.slug, title: s.title, a: false, b: true}); else map.get(k).b = true; });
-  toc.innerHTML = `<span class="toc-label">${esc(t("toc"))}</span>` + [...map.values()].map(e =>
-    `<button class="toc-chip" data-sec="${esc(e.slug)}">${e.a ? '<span class="pd a"></span>' : ""}${e.b ? '<span class="pd b"></span>' : ""}${esc(e.title)}</button>`).join("");
-  toc.classList.remove("hidden");
-  toc.querySelectorAll("[data-sec]").forEach(ch => ch.onclick = () => {
-    const slug = ch.getAttribute("data-sec");
-    ["A", "B"].forEach(side => {
-      const sec = document.getElementById(`sec-${side}-${slug}`);
-      if (sec) { sec.classList.remove("collapsed"); sec.scrollIntoView({block: "start", behavior: "smooth"}); }
-    });
-  });
 }
 let syncing = false;
 function attachSync() {
