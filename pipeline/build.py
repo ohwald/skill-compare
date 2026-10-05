@@ -38,7 +38,7 @@ def theme_list(themes):
 
 
 def build(fixtures_dir=None, real=False, sources_dir=".sources", out="site",
-          fetch_aux=False, cache_dir=".cache", sources=None):
+          fetch_aux=False, cache_dir=".cache", sources=None, bodies_mode="copy"):
     themes_path = THEMES_JSON
     themes = json.loads(themes_path.read_text())["themes"]
     entries, repo_dirs = [], {}
@@ -88,12 +88,28 @@ def build(fixtures_dir=None, real=False, sources_dir=".sources", out="site",
                              if all(x in {s["id"] for s in skills} for x in p)]}
     validate.validate_manifest(manifest, bodies)
     out_dir = Path(out)
-    bodies_dir = out_dir / "bodies"
     if out_dir.exists():
         shutil.rmtree(out_dir)
-    bodies_dir.mkdir(parents=True)
-    for fp, text in bodies.items():
-        (bodies_dir / f"{fp}.md").write_text(text, encoding="utf-8")
+    out_dir.mkdir(parents=True)
+    if bodies_mode == "link":
+        # 零拷贝:指纹 → GitHub raw URL 映射,内容由前端按需从源仓库拉取。
+        # 版本锁定用各时间点自己的 commit;当前版用 skill.head。
+        mapping = {}
+        for s in manifest["skills"]:
+            info = {"repo": s["source"], "dir": s["rel_path"].rsplit("/", 1)[0]}
+            base = f"https://raw.githubusercontent.com/{info['repo']}"
+            if s.get("head"):
+                mapping[s["fp"]] = f"{base}/{s['head']}/{info['dir']}/SKILL.md"
+            for v in s.get("versions") or []:
+                if v["fp"] not in mapping:
+                    mapping[v["fp"]] = f"{base}/{v['sha']}/{info['dir']}/SKILL.md"
+        (out_dir / "bodies.json").write_text(
+            json.dumps(mapping, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    else:
+        bodies_dir = out_dir / "bodies"
+        bodies_dir.mkdir(parents=True)
+        for fp, text in bodies.items():
+            (bodies_dir / f"{fp}.md").write_text(text, encoding="utf-8")
     (out_dir / "manifest.json").write_text(
         json.dumps(manifest, ensure_ascii=False, indent=1), encoding="utf-8")
     html = TEMPLATE.read_text()
@@ -132,10 +148,14 @@ def main(argv=None):
     ap.add_argument("--out", default="site")
     ap.add_argument("--fetch-aux", action="store_true", help="联网拉取辅助数据(stars/installs/分类)")
     ap.add_argument("--cache", default=".cache")
+    ap.add_argument("--bodies-mode", choices=["copy", "link"], default="copy",
+                    help="copy=产物自带正文;link=指纹→GitHub raw 映射(零拷贝,前端按需拉)")
+
     args = ap.parse_args(argv)
     if not args.fixtures and not args.real:
         ap.error("需要 --fixtures DIR 或 --real 之一")
-    build(args.fixtures, args.real, args.sources, args.out, args.fetch_aux, args.cache)
+    build(args.fixtures, args.real, args.sources, args.out, args.fetch_aux, args.cache,
+          bodies_mode=args.bodies_mode)
 
 
 if __name__ == "__main__":

@@ -22,16 +22,38 @@ def _fetch_json(url, timeout=15):
         return json.loads(r.read().decode("utf-8"))
 
 
-def ensure_repo(source, sources_dir):
-    """clone(单分支全历史,供版本轴)或更新已有仓库,返回仓库目录。"""
+def ensure_repo(source, sources_dir, partial=True):
+    """clone(单分支;partial=True 用 blob:none 无内容克隆,版本轴所需元数据全有,
+    文件内容经 git show 按需取回)或更新已有仓库,返回仓库目录。"""
     sources_dir = Path(sources_dir); sources_dir.mkdir(parents=True, exist_ok=True)
     d = sources_dir / source["id"]
     if (d / ".git").is_dir():
         _git("fetch", "origin", "--prune", cwd=d)
         _git("reset", "--hard", f"origin/{source['branch']}", cwd=d)
     else:
-        _git("clone", "--single-branch", "--branch", source["branch"], source["repo"], str(d))
+        args = ["clone", "--single-branch", "--branch", source["branch"]]
+        if partial:
+            args += ["--filter=blob:none"]
+        args += [source["repo"], str(d)]
+        try:
+            _git(*args)
+        except subprocess.CalledProcessError:
+            if partial:
+                _git("clone", "--single-branch", "--branch", source["branch"], source["repo"], str(d))
+            else:
+                raise
     return d
+
+
+def main(argv=None):
+    import argparse
+    ap = argparse.ArgumentParser(prog="python3 -m pipeline.collect")
+    ap.add_argument("--sources-dir", default=".sources")
+    ap.add_argument("--full", action="store_true", help="完整克隆(默认 blob:none 部分克隆)")
+    args = ap.parse_args(argv)
+    for src in config.SOURCES:
+        d = ensure_repo(src, args.sources_dir, partial=not args.full)
+        print(f"[collect] {src['id']} 就绪 → {d}")
 
 
 def load_cache(cache_dir):
@@ -110,12 +132,6 @@ def gather_aux(source_cfgs, skill_items, repos, cache_dir):
     categories = fetch_categories(cache)
     save_cache(cache_dir, cache)
     return {"stars": stars, "installs": installs, "categories": categories}
-
-
-def main(argv=None):
-    for src in config.SOURCES:
-        d = ensure_repo(src, ".sources")
-        print(f"[collect] {src['id']} 就绪 → {d}")
 
 
 if __name__ == "__main__":
