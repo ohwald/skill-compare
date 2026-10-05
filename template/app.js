@@ -138,8 +138,7 @@ function icon(name, s, fill) {
 function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;"); }
 function fmt(n) { return n == null ? "—" : (n >= 1e6 ? (n / 1e6).toFixed(1) + "M" : n >= 1e3 ? (n / 1e3).toFixed(1) + "k" : String(n)); }
 function licBadge(lic) {
-  const full = lic === "full";
-  return `<span class="lic-badge ${full ? "full" : "deg"}">${esc(full ? t("full") : t("deg"))}</span>`;
+  return lic === "full" ? "" : `<span class="lic-badge deg">${esc(t("deg"))}</span>`;
 }
 function costChip(s) {
   const cc = s.context_cost; if (!cc) return "";
@@ -332,7 +331,19 @@ function timelineEl(sk) {
     <input type="range" class="ts-b" min="0" max="${n - 1}" step="1" value="${ib}"
            style="z-index:${ib > ia ? 4 : 3}" aria-label="B time point">
   </div>
-  <div class="t-dates"><span class="da">${esc(vs[ia].date + " · " + vs[ia].sha)}</span>
+  ` + rangeBadge(vs, ia, ib);
+}
+function rangeBadge(vs, ia, ib) {
+  const lo = Math.min(ia, ib) + 1, hi = Math.max(ia, ib);
+  let added = 0, removed = 0;
+  for (let i = lo; i <= hi; i++) {
+    const c = vs[i] && vs[i].change;
+    if (c) { added += c.added; removed += c.removed; }
+  }
+  if (!(added || removed)) return `<div class="t-dates"><span class="da">${esc(vs[ia].date + " · " + vs[ia].sha)}</span>
+  <span class="db">${esc(vs[ib].date + " · " + vs[ib].sha)}</span></div>`;
+  return `<div class="t-dates"><span class="da">${esc(vs[ia].date + " · " + vs[ia].sha)}</span>
+  <span class="chg"><b class="up">+${added}</b><b class="dn">−${removed}</b></span>
   <span class="db">${esc(vs[ib].date + " · " + vs[ib].sha)}</span></div>`;
 }
 /* ---------- 控制台 ---------- */
@@ -345,10 +356,12 @@ function vpanel(sk, side, curIdx) {
       const cur = String(curIdx) === idx;
       const tags = v.tags && v.tags.length
         ? v.tags[0] + (v.tags.length > 1 ? ` +${v.tags.length - 1}` : "") : "";
+      const chg = v.change ? `<span class="chg"><b class="up">+${v.change.added}</b><b class="dn">−${v.change.removed}</b></span>` : "";
       return `<div class="vrow ${cur ? "cur" : ""}" data-vsel="${idx}">
         ${tags ? `<span class="vt">${esc("★ " + tags)}</span>` : ""}
         <span class="vd">${esc(v.date + " · " + v.sha.slice(0, 7))}</span>
-        ${idx === "latest" || idx === String(n - 1) ? `<span class="vl">${esc(t("latest"))}</span>` : ""}
+        ${idx === String(n - 1) ? `<span class="vl">${esc(t("latest"))}</span>` : ""}
+        ${chg}
         <span class="meta">${v.lines} ${esc(t("lines"))}</span>
         ${cur ? icon("check", 13, "var(--blue)") : ""}</div>`;
     }).join("")}</div>`;
@@ -659,6 +672,16 @@ function bind() {
   });
   app.querySelectorAll("[data-conflict]").forEach(b => b.onclick = () => { setMode("compare"); setSlot("B", b.getAttribute("data-conflict")); });
   app.querySelectorAll("[data-src]").forEach(b => b.onclick = () => window.open(b.getAttribute("data-src"), "_blank"));
+}
+function rangeDiff(vs, ia, ib) {
+  const lo = Math.min(ia, ib) + 1, hi = Math.max(ia, ib);
+  if (lo > hi) return null;
+  let added = 0, removed = 0;
+  for (let i = lo; i <= hi; i++) {
+    const c = vs[i] && vs[i].change;
+    if (c) { added += c.added; removed += c.removed; }
+  }
+  return (added || removed) ? {added, removed} : null;
 }
 function lightUpdate() {
   const sk = skill(state.a); if (!sk) return;

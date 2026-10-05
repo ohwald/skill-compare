@@ -62,7 +62,20 @@ def build(fixtures_dir=None, real=False, sources_dir=".sources", out="site",
         s["stars"] = aux["stars"].get(s["source"])
         s["installs"] = aux["installs"].get(f'{s["name"]}@{s["source"]}')
         s["category"] = aux["categories"].get(s["name"])
-    # 版本轴(真实源:git 历史;fixtures:单一合成时间点)
+    # 版本轴 + 逐版本 diff 预计算(相对时间轴上前一版本,git 风格 +added/−removed)
+    import difflib
+    def line_diff(prev_text, text):
+        a = [l for l in prev_text.split("\n")]
+        b = [l for l in text.split("\n")]
+        sm = difflib.SequenceMatcher(a=[l.rstrip() for l in a], b=[l.rstrip() for l in b], autojunk=False)
+        added = removed = 0
+        for tag, i1, i2, j1, j2 in sm.get_opcodes():
+            if tag in ("replace", "delete"):
+                removed += i2 - i1
+            if tag in ("replace", "insert"):
+                added += j2 - j1
+        return added, removed
+
     tag_cache = {}
     today = datetime.date.today().isoformat()
     for s in skills:
@@ -79,6 +92,14 @@ def build(fixtures_dir=None, real=False, sources_dir=".sources", out="site",
         if not versions:
             versions = [{"sha": "0000000000", "date": today, "fp": s["fp"], "lines": s["lines"], "tags": []}]
             bodies.setdefault(s["fp"], "")
+        prev_text = None
+        for v in versions:
+            if prev_text is None:
+                v["change"] = None                      # 最早版本无前驱
+            else:
+                added, removed = line_diff(prev_text, bodies.get(v["fp"], ""))
+                v["change"] = None if (added == 0 and removed == 0) else {"added": added, "removed": removed}
+            prev_text = bodies.get(v["fp"], "")
         s["versions"] = versions
         s["versions_count"] = len(versions)
     manifest = {"generated": datetime.datetime.now(datetime.timezone.utc)
