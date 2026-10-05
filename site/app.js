@@ -467,10 +467,27 @@ function conflictBanner(s) {
 }
 /* ---------- 正文加载 ---------- */
 const bodyCache = new Map();
+let bodiesMap = null;
 function fetchBody(fp) {
   if (!fp) return Promise.resolve("");
   if (bodyCache.has(fp)) return bodyCache.get(fp);
-  const p = fetch("bodies/" + fp + ".md").then(r => r.ok ? r.text() : "");
+  let p;
+  if (bodiesMap) {
+    const url = bodiesMap[fp];
+    p = url ? fetch(url).then(r => r.ok ? r.text() : "") : Promise.resolve("");
+  } else {
+    p = fetch("bodies/" + fp + ".md").then(r => {
+      if (r.status === 404) {  // link 模式:正文在 bodies.json 映射里
+        return fetch("bodies.json").then(m => {
+          if (!m.ok) return "";
+          bodiesMap = m.json();
+          const u = bodiesMap[fp];
+          return u ? fetch(u).then(r2 => r2.ok ? r2.text() : "") : "";
+        });
+      }
+      return r.ok ? r.text() : "";
+    });
+  }
   bodyCache.set(fp, p); return p;
 }
 function mountContent() {
