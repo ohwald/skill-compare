@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install test runner
+        run: pip install pytest
+      - name: Unit & e2e tests
+        run: python3 -m pytest -q
+      - name: Build smoke (fixtures, no network)
+        run: |
+          python3 -m pipeline.build --fixtures fixtures --out /tmp/site-smoke
+          test -f /tmp/site-smoke/index.html
+          test -f /tmp/site-smoke/manifest.json
+          test -d /tmp/site-smoke/bodies
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Frontend JS syntax gate
+        run: node --check template/app.js
+      - name: No leftover template placeholders
+        run: "! grep -rE '__[A-Z_]+__' template/ pipeline/"
+      - name: Summary
+        if: always()
+        run: echo "CI = tests + build smoke + JS gate + placeholder gate"
