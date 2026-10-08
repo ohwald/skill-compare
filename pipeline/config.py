@@ -228,7 +228,9 @@ AUX = {
     "github_repo_api": "https://api.github.com/repos/{repo}",
 }
 
+# 精选组合 = 策展的自比对推荐(CONTEXT.md:同一 skill 的两个值得对比的版本;
+# ADR-0001 后不再有跨 skill 组合,因此每项为 [id, id])。
 DEFAULT_FEATURED = [
-    ["frontend-design", "test-driven-development"],
-    ["pdf", "frontend-design"],
+    ["impeccable", "impeccable"],
+    ["test-driven-development", "test-driven-development"],
 ]
