@@ -42,9 +42,9 @@ def demo_body(i):
         body = body.replace("Demo body line 2.\n", "")
     if i >= 8:
         body += "\n# Advanced\n\nAdvanced section content.\n"
-    if i == 9:
+    if i >= 9:
         body = body.replace("Run the demo.\n", "Run the newer demo.\n")
-    if i == 11:
+    if i >= 11:
         body = body.replace("# Tips\n\nBe careful.\n", "# Tips\n\nBe careful. Extra tip.\nMore tips here.\n")
     return body
 
