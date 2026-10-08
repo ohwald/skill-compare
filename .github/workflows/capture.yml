@@ -21,7 +21,9 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install test runner
-        run: pip install pytest
+        run: pip install pytest playwright
+      - name: Install headless browser for e2e
+        run: python -m playwright install --with-deps chromium
       - name: Quality gate
         run: python -m pytest -q
       - name: Collect sources

@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>时间轴原型 — Skill History v2(spec #21)</title>
+<style>
+:root{--font-ui:-apple-system,'PingFang SC','Segoe UI',Roboto,sans-serif;
+      --font-mono:'SF Mono',ui-monospace,Menlo,Consolas,'JetBrains Mono',monospace}
+/* tokyo-night(design.pen 基准主题) */
+[data-theme="tokyo-night"]{--bg:#1a1b26;--panel:#1f2335;--panel2:#24283b;--head:#24283b;
+  --line:#292e42;--dimline:#1f2335;--text:#c0caf5;--plain:#9aa5ce;--dim:#8b97bd;--faint:#565f89;
+  --gutter:#3b4261;--blue:#7aa2f7;--blue-soft:#1f2b47;--purple:#bb9af7;--purple-soft:#252345;
+  --purple-ring:#414868;--green:#9ece6a;--green-bg:#20303b;--red:#f7768e;--red-bg:#3f2a3c;
+  --orange:#e0af68;--orange-bg:#3a2e1f}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font:14px/1.5 var(--font-ui);min-height:100vh}
+.wrap{max-width:1280px;margin:0 auto;padding:26px 32px}
+h1{font-size:15px;font-weight:600;margin:0 0 4px}
+.sub{font-size:12px;color:var(--faint);margin-bottom:26px}
+.sub b{color:var(--dim);font-weight:600}
+.board{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 22px 18px}
+.readout{margin-top:14px;font-family:var(--font-mono);font-size:11px;color:var(--dim);
+         border-top:1px solid var(--dimline);padding-top:10px}
+.readout b.ca{color:var(--blue)}.readout b.cb{color:var(--purple)}
+.legend{display:flex;gap:14px;margin-top:8px;font-size:11px;color:var(--faint)}
+.legend .o{color:var(--orange)}
+</style>
+</head>
+<body data-theme="tokyo-night">
+<div class="wrap">
+  <h1>时间轴交互原型</h1>
+  <div class="sub">spec #21 / ADR-0001 · 数据 = <b>impeccable</b> 真实历史(60 个时间点 · 20 个落 tag)· 刻度按<b>提交日期比例</b>定位 · 纯静态可直开</div>
+  <div class="board">
+    <div id="tl"></div>
+    <div class="readout" id="readout"></div>
+    <div class="legend">
+      <span>拖动<span style="color:var(--blue)">双柄</span>选时间点(自动锚定最近 commit)</span>
+      <span>点击刻度直达</span><span class="o">橙点/标签 = 上游 tag</span>
+      <span>滚轮缩放 · 空白拖动平移</span>
+    </div>
+  </div>
+</div>
+<script src="timeline.js"></script>
+<script>
+const DATA = [{"date":"2026-06-22","sha":"da18929df0","tags":["cli-v3.1.0","skill-v3.8.0"],"change":null,"lines":168},{"date":"2026-06-26","sha":"2520317f94","tags":[],"change":{"added":1,"removed":0},"lines":169},{"date":"2026-07-01","sha":"e83e437cdd","tags":["cli-v3.2.0","skill-v3.9.0"],"change":{"added":1,"removed":1},"lines":169},{"date":"2026-07-01","sha":"44c27a72af","tags":["skill-v3.9.1"],"change":{"added":1,"removed":1},"lines":169},{"date":"2026-07-08","sha":"0092df907b","tags":[],"change":{"added":1,"removed":1},"lines":169},{"date":"2026-07-08","sha":"18dec816de","tags":[],"change":{"added":3,"removed":3},"lines":169},{"date":"2026-07-09","sha":"4e715d0f35","tags":[],"change":{"added":9,"removed":8},"lines":170},{"date":"2026-07-10","sha":"a38a0765a9","tags":[],"change":{"added":71,"removed":57},"lines":184},{"date":"2026-07-10","sha":"440348a498","tags":[],"change":{"added":10,"removed":4},"lines":190},{"date":"2026-07-10","sha":"f1078c59b0","tags":[],"change":{"added":3,"removed":3},"lines":190},{"date":"2026-07-10","sha":"1172898020","tags":[],"change":{"added":4,"removed":0},"lines":194},{"date":"2026-07-10","sha":"6b3d174e93","tags":[],"change":{"added":28,"removed":130},"lines":92},{"date":"2026-07-11","sha":"56edce955a","tags":[],"change":{"added":4,"removed":2},"lines":94},{"date":"2026-07-11","sha":"02f760fbad","tags":[],"change":{"added":2,"removed":2},"lines":94},{"date":"2026-07-11","sha":"2e71facb59","tags":[],"change":{"added":2,"removed":2},"lines":94},{"date":"2026-07-11","sha":"bf2dd7ec13","tags":[],"change":{"added":10,"removed":4},"lines":100},{"date":"2026-07-11","sha":"0fde0850cf","tags":[],"change":{"added":5,"removed":19},"lines":86},{"date":"2026-07-11","sha":"051f856113","tags":[],"change":{"added":1,"removed":1},"lines":86},{"date":"2026-07-11","sha":"b409bedf5d","tags":[],"change":{"added":1,"removed":0},"lines":87},{"date":"2026-07-11","sha":"a55b162a24","tags":[],"change":{"added":2,"removed":2},"lines":87},{"date":"2026-07-11","sha":"eeff485c20","tags":[],"change":{"added":1,"removed":1},"lines":87},{"date":"2026-07-11","sha":"139d69f2b7","tags":[],"change":{"added":2,"removed":1},"lines":88},{"date":"2026-07-12","sha":"cfbac54440","tags":[],"change":{"added":3,"removed":3},"lines":88},{"date":"2026-07-12","sha":"073e17e180","tags":[],"change":{"added":1,"removed":1},"lines":88},{"date":"2026-07-15","sha":"ead6ddabe5","tags":[],"change":{"added":24,"removed":24},"lines":88},{"date":"2026-07-15","sha":"bbed6eef08","tags":[],"change":{"added":1,"removed":1},"lines":88},{"date":"2026-07-18","sha":"2b1f36c43e","tags":[],"change":{"added":37,"removed":31},"lines":94},{"date":"2026-07-21","sha":"311c30f11f","tags":[],"change":{"added":8,"removed":20},"lines":82},{"date":"2026-07-22","sha":"a96445b973","tags":["cli-v3.3.0","skill-v4.0.0"],"change":{"added":6,"removed":2},"lines":86},{"date":"2026-07-22","sha":"eda81f0937","tags":["cli-v3.3.1","skill-v4.0.1"],"change":{"added":1,"removed":1},"lines":86},{"date":"2026-07-23","sha":"fc2e694afc","tags":["skill-v4.0.2"],"change":{"added":1,"removed":1},"lines":86},{"date":"2026-07-25","sha":"af78b1e512","tags":[],"change":{"added":1,"removed":1},"lines":86},{"date":"2026-07-26","sha":"d272b9bd5d","tags":[],"change":{"added":1,"removed":1},"lines":86},{"date":"2026-07-27","sha":"68b1129634","tags":["cli-v3.4.0","ext-v1.3.0","skill-v4.0.3"],"change":{"added":1,"removed":1},"lines":86},{"date":"2026-07-29","sha":"9a949fb543","tags":["cli-v3.5.0","ext-v1.3.1","skill-v4.0.4"],"change":{"added":1,"removed":1},"lines":86},{"date":"2026-08-03","sha":"9529f07840","tags":[],"change":{"added":1,"removed":1},"lines":86},{"date":"2026-08-09","sha":"1cbee026c3","tags":[],"change":{"added":1,"removed":1},"lines":86},{"date":"2026-08-09","sha":"c38ad8fb8b","tags":[],"change":{"added":1,"removed":1},"lines":86},{"date":"2026-08-14","sha":"2c33196c51","tags":["cli-v3.6.0","ext-v1.3.2","skill-v4.1.0"],"change":{"added":1,"removed":1},"lines":86},{"date":"2026-08-14","sha":"5a149f3fdb","tags":["skill-v4.1.1"],"change":{"added":1,"removed":1},"lines":86},{"date":"2026-08-26","sha":"380cfcb08e","tags":["cli-v3.6.1","ext-v1.3.3","skill-v4.1.2"],"change":{"added":1,"removed":1},"lines":86},{"date":"2026-08-31","sha":"52139bc8d3","tags":[],"change":{"added":1,"removed":1},"lines":86},{"date":"2026-09-01","sha":"94b7f34f6e","tags":[],"change":{"added":1,"removed":1},"lines":86},{"date":"2026-09-01","sha":"c0f4952122","tags":["skill-v4.1.3"],"change":{"added":1,"removed":1},"lines":86},{"date":"2026-09-04","sha":"f7ddaa71b4","tags":[],"change":{"added":5,"removed":5},"lines":86},{"date":"2026-09-04","sha":"3d17a8e40f","tags":["cli-v4.0.0","cli-v4.0.1","cli-v4.0.2","ext-v1.4.0","skill-v4.2.0"],"change":{"added":1,"removed":1},"lines":86},{"date":"2026-09-05","sha":"4bee58d89e","tags":[],"change":{"added":0,"removed":3},"lines":83},{"date":"2026-09-05","sha":"707fb6061c","tags":[],"change":{"added":2,"removed":1},"lines":84},{"date":"2026-09-05","sha":"831cabee8b","tags":["cli-v4.0.3","skill-v4.2.1"],"change":{"added":1,"removed":1},"lines":84},{"date":"2026-09-06","sha":"f41300b3b2","tags":[],"change":{"added":1,"removed":1},"lines":84},{"date":"2026-09-06","sha":"f64da20b07","tags":["cli-v4.0.4","skill-v4.2.2"],"change":{"added":1,"removed":1},"lines":84},{"date":"2026-09-07","sha":"dbdc470e70","tags":[],"change":{"added":4,"removed":2},"lines":86},{"date":"2026-09-08","sha":"d25059e003","tags":[],"change":{"added":1,"removed":1},"lines":86},{"date":"2026-09-08","sha":"12ffee04c2","tags":["cli-v4.0.5","skill-v4.2.3"],"change":{"added":1,"removed":1},"lines":86},{"date":"2026-09-08","sha":"73a6f51a54","tags":["cli-v4.1.0","skill-v4.3.0"],"change":{"added":1,"removed":1},"lines":86},{"date":"2026-09-08","sha":"cd12f8660e","tags":["skill-v4.3.1"],"change":{"added":1,"removed":1},"lines":86},{"date":"2026-09-15","sha":"0a4e72a254","tags":[],"change":{"added":3,"removed":2},"lines":87},{"date":"2026-09-24","sha":"351e7a8410","tags":["skill-v4.4.0"],"change":{"added":1,"removed":1},"lines":87},{"date":"2026-10-01","sha":"508d7e8955","tags":["skill-v4.5.0"],"change":{"added":1,"removed":1},"lines":87},{"date":"2026-10-04","sha":"6b9d0ffa3a","tags":[],"change":{"added":1,"removed":0},"lines":88}];
+const ro = document.getElementById("readout");
+function fmt(i){const v=DATA[i];return v.date+" · "+v.sha.slice(0,7)+(v.tags.length?" · "+v.tags.join(","):"");}
+function readout(){ro.innerHTML =
+  "<b class='ca'>基线 A</b> = "+fmt(ia)+" &nbsp;→&nbsp; <b class='cb'>对比 B</b> = "+fmt(ib);}
+let ia = DATA.length-2, ib = DATA.length-1;
+SkillTimeline.mount(document.getElementById("tl"), {
+  versions: DATA, ia, ib,
+  onChange(a,b){ ia=a; ib=b; readout(); },
+  labels:{quick:"快捷",all:"全部",days:"天",latest:"最新",noPrev:"—",
+          handleA:"基线时间点",handleB:"对比时间点"}
+});
+readout();
+</script>
+</body>
+</html>

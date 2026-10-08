@@ -152,7 +152,7 @@ def build(fixtures_dir=None, real=False, sources_dir=".sources", out="site",
                    "also_seen", "name_conflicts", "versions_count")
     lite = {**manifest, "lite": True,
             "skills": [{k: s[k] for k in LITE_FIELDS if k in s} for s in manifest["skills"]]}
-    payload = json.dumps(lite, ensure_ascii=False, separators=(",", ":")).replace("</", "<\/")
+    payload = json.dumps(lite, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
     (out_dir / "manifest.json").write_text(
         json.dumps(manifest, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     html = html.replace("__THEME_CSS__", theme_css(themes))
@@ -163,9 +163,11 @@ def build(fixtures_dir=None, real=False, sources_dir=".sources", out="site",
     app_js = (TEMPLATE.parent / "app.js").read_text()
     app_js = app_js.replace("__THEME_LIST__", theme_list(themes))
     (out_dir / "app.js").write_text(app_js, encoding="utf-8")
+    # 时间轴组件(index.html 经 <script src> 引用,静态原型 timeline.html 同源复用)
+    (out_dir / "timeline.js").write_text((TEMPLATE.parent / "timeline.js").read_text(), encoding="utf-8")
     # 防回归:任何产物里残留占位符 = 模板替换遗漏,直接构建失败
     leftovers = []
-    for f in ("index.html", "app.js"):
+    for f in ("index.html", "app.js", "timeline.js"):
         found = re.findall(r"__[A-Z_]+__", (out_dir / f).read_text())
         if found:
             leftovers.append(f"{f}: {sorted(set(found))}")

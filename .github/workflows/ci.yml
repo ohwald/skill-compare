@@ -24,7 +24,9 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install test runner
-        run: pip install pytest
+        run: pip install pytest playwright
+      - name: Install headless browser for e2e
+        run: python -m playwright install --with-deps chromium
       - name: Unit & e2e tests
         run: python3 -m pytest -q
       - name: Build smoke (fixtures, no network)
@@ -37,7 +39,9 @@ jobs:
         with:
           node-version: "22"
       - name: Frontend JS syntax gate
-        run: node --check template/app.js
+        run: |
+          node --check template/app.js
+          node --check template/timeline.js
       - name: No leftover template placeholders in artifacts
         run: "! grep -rEl '__[A-Z_]+__' /tmp/site-smoke/"
       - name: Summary
