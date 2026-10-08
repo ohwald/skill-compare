@@ -87,3 +87,8 @@ def test_daily_update_loop(tmp_path, upstream):
     new_body = (tmp_path / "site" / "bodies" / f"{demo2['fp']}.md").read_text()
     assert "demo v2 content" in new_body                   # 正文已是最新
     assert (tmp_path / "site" / "bodies" / f"{demo1['fp']}.md").exists()  # 旧版本正文保留
+
+    # build stamp + 资源缓存指纹:线上 vs 本地一键核对,杜绝"浏览器缓存"式误诊
+    html = (tmp_path / "site" / "index.html").read_text(encoding="utf-8")
+    assert '<meta name="build" content="' in html and "__BUILD_STAMP__" not in html
+    assert "app.js?v=" in html
