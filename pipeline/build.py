@@ -10,6 +10,7 @@ import datetime
 import json
 import re
 import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -35,6 +36,17 @@ def theme_css(themes):
 
 def theme_list(themes):
     return json.dumps([{"id": tid, "label": THEME_LABELS.get(tid, tid)} for tid in themes])
+
+
+def build_stamp():
+    """产物指纹 = git sha + UTC 时间:线上 vs 本地一键核对,杜绝'浏览器缓存'式误诊。"""
+    try:
+        sha = subprocess.run(["git", "rev-parse", "--short", "HEAD"],
+                             capture_output=True, text=True, check=True).stdout.strip()
+    except Exception:
+        sha = "nogit"
+    ts = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%MZ")
+    return f"{sha}-{ts}"
 
 
 def build(fixtures_dir=None, real=False, sources_dir=".sources", out="site",
@@ -146,6 +158,7 @@ def build(fixtures_dir=None, real=False, sources_dir=".sources", out="site",
     html = html.replace("__THEME_CSS__", theme_css(themes))
     html = html.replace("__THEME_LIST__", theme_list(themes))
     html = html.replace("__MANIFEST__", payload)
+    html = html.replace("__BUILD_STAMP__", build_stamp())
     (out_dir / "index.html").write_text(html, encoding="utf-8")
     app_js = (TEMPLATE.parent / "app.js").read_text()
     app_js = app_js.replace("__THEME_LIST__", theme_list(themes))
