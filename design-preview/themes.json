@@ -26,7 +26,8 @@
     "green_bg": "#20303b",
     "red_bg": "#3f2a3c",
     "orange": "#e0af68",
-    "orange_bg": "#3a2e1f"
+    "orange_bg": "#3a2e1f",
+    "red": "#f7768e"
    },
    "label": "Tokyo Night"
   },
@@ -55,7 +56,8 @@
     "green_bg": "#26352c",
     "red_bg": "#3b2a3a",
     "orange": "#fab387",
-    "orange_bg": "#3a2f28"
+    "orange_bg": "#3a2f28",
+    "red": "#f38ba8"
    },
    "label": "Catppuccin Mocha"
   },
@@ -84,7 +86,8 @@
     "green_bg": "#2e3b31",
     "red_bg": "#3c2f32",
     "orange": "#d19a66",
-    "orange_bg": "#3d3527"
+    "orange_bg": "#3d3527",
+    "red": "#e06c75"
    },
    "label": "One Dark Pro"
   },
@@ -113,7 +116,8 @@
     "green_bg": "#e6ffec",
     "red_bg": "#ffebe9",
     "orange": "#9a6700",
-    "orange_bg": "#fff3d6"
+    "orange_bg": "#fff3d6",
+    "red": "#cf222e"
    },
    "label": "GitHub Light"
   },
@@ -142,7 +146,8 @@
     "green_bg": "#eaf5ea",
     "red_bg": "#fcebec",
     "orange": "#c18401",
-    "orange_bg": "#fbf0d9"
+    "orange_bg": "#fbf0d9",
+    "red": "#cf222e"
    },
    "label": "One Light"
   },
@@ -171,7 +176,8 @@
     "green_bg": "#edf3dc",
     "red_bg": "#f5e4de",
     "orange": "#cb4b16",
-    "orange_bg": "#f5ecd4"
+    "orange_bg": "#f5ecd4",
+    "red": "#dc322f"
    },
    "label": "Solarized Light"
   }

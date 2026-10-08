@@ -28,6 +28,7 @@ const I18N = {
       popular:"🔥 热门",hint:"拖动双柄或点击刻度选择基线/对比时间点 · 滚轮缩放 · 空白处拖动平移",
       sideA:"基线",sideB:"对比",tagGroup:"落 tag",commitGroup:"普通提交",singleTp:"仅一个时间点",
       absent:"该时间点无此章节",tlQuick:"快捷",tlAll:"全部",tlDays:"天",tlNoPrev:"—",
+      mmLabel:"变更缩略图",
       tlHandleA:"基线时间点",tlHandleB:"对比时间点"},
   en:{search:"Search skills…",featured:"✨ Featured pairs",all:"All skills",empty:"No matching skills",
       lock:"Proprietary license · original text not reproduced",view:"View source ↗",
@@ -39,6 +40,7 @@ const I18N = {
       popular:"🔥 Popular",hint:"Drag the dual handles or click a tick to pick baseline/compare · wheel to zoom · drag empty space to pan",
       sideA:"Baseline",sideB:"Compare",tagGroup:"Tagged",commitGroup:"Commits",singleTp:"single timepoint",
       absent:"absent at this timepoint",tlQuick:"Quick",tlAll:"All",tlDays:"d",tlNoPrev:"—",
+      mmLabel:"change overview",
       tlHandleA:"Baseline timepoint",tlHandleB:"Compare timepoint"}
 };
 const THEMES = __THEME_LIST__;
@@ -411,53 +413,195 @@ function splitSections(raw) {
   return secs.filter(s => s.lines.some(l => l.trim()));
 }
 function pairSections(secA, secB) {
-  /* 按层级+标题配对,两侧取并集;各自缺失的一侧计全量增/删 */
+  /* 按层级+标题配对,两侧取并集;行级 opcodes 供对齐渲染与缩略图复用 */
   const mapA = new Map(secA.map(s => [s.key, s]));
   const mapB = new Map(secB.map(s => [s.key, s]));
   const order = secA.map(s => s.key).concat(secB.map(s => s.key).filter(k => !mapA.has(k)));
   return order.map(k => {
     const a = mapA.get(k) || null, b = mapB.get(k) || null;
-    let st;
-    if (!a) st = {added: b.lines.length, removed: 0};
-    else if (!b) st = {added: 0, removed: a.lines.length};
-    else st = diffStat(a.lines, b.lines);
-    return {key: k, a, b, added: st.added, removed: st.removed};
+    if (a && b) {
+      const ops = diffOpcodes(a.lines, b.lines);
+      let added = 0, removed = 0;
+      for (const op of ops) {
+        if (op.tag === "insert" || op.tag === "replace") added += op.b1 - op.b0;
+        if (op.tag === "delete" || op.tag === "replace") removed += op.a1 - op.a0;
+      }
+      return {key: k, a, b, ops, added, removed};
+    }
+    const one = a || b;
+    return {key: k, a, b, ops: null,
+            added: a ? 0 : one.lines.length, removed: a ? one.lines.length : 0};
   });
 }
-function diffStat(aLines, bLines) {
-  const rstr = l => l.replace(/\s+$/, "");
-  const a = aLines.map(rstr), b = bLines.map(rstr);
-  let lo = 0; while (lo < a.length && lo < b.length && a[lo] === b[lo]) lo++;
-  let ha = a.length, hb = b.length;
-  while (ha > lo && hb > lo && a[ha - 1] === b[hb - 1]) { ha--; hb--; }
-  const A = a.slice(lo, ha), B = b.slice(lo, hb);
-  if (!A.length || !B.length) return {added: B.length, removed: A.length};
-  const N = A.length, M = B.length;
-  const dp = Array.from({length: N + 1}, () => new Uint32Array(M + 1));
+/* 行级 diff:difflib 语义的 opcodes(equal/delete/insert/replace),行按 rstrip 比较
+ * (与管线 +N −M 统计口径一致)。先裁公共前后缀,LCS DP + 贪心回溯取匹配链,再由链分段。 */
+function diffOpcodes(aLines, bLines) {
+  const ra = aLines.map(l => l.replace(/\s+$/, "")), rb = bLines.map(l => l.replace(/\s+$/, ""));
+  let lo = 0;
+  while (lo < ra.length && lo < rb.length && ra[lo] === rb[lo]) lo++;
+  let ha = ra.length, hb = rb.length;
+  while (ha > lo && hb > lo && ra[ha - 1] === rb[hb - 1]) { ha--; hb--; }
+  const ops = [];
+  if (lo) ops.push({tag: "equal", a0: 0, a1: lo, b0: 0, b1: lo});
+  const N = ha - lo, M = hb - lo;
+  let chain = [];
+  if (N > 0 && M > 0) {
+    const dp = Array.from({length: N + 1}, () => new Uint32Array(M + 1));
+    for (let i = N - 1; i >= 0; i--)
+      for (let j = M - 1; j >= 0; j--)
+        dp[i][j] = ra[lo + i] === rb[lo + j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
+    let i = 0, j = 0;
+    while (i < N && j < M) {
+      if (ra[lo + i] === rb[lo + j]) { chain.push([lo + i, lo + j]); i++; j++; }
+      else if (dp[i + 1][j] >= dp[i][j + 1]) i++;
+      else j++;
+    }
+  }
+  let pa = lo, pb = lo;
+  const gap = (ea, eb) => {
+    const na = ea - pa, nb = eb - pb;
+    if (na && nb) ops.push({tag: "replace", a0: pa, a1: ea, b0: pb, b1: eb});
+    else if (na) ops.push({tag: "delete", a0: pa, a1: ea, b0: pb, b1: pb});
+    else if (nb) ops.push({tag: "insert", a0: pa, a1: pa, b0: pb, b1: eb});
+    pa = ea; pb = eb;
+  };
+  for (const [ai, bj] of chain) {
+    gap(ai, bj);
+    ops.push({tag: "equal", a0: ai, a1: ai + 1, b0: bj, b1: bj + 1});
+    pa = ai + 1; pb = bj + 1;
+  }
+  gap(ha, hb);
+  const merged = [];
+  for (const op of ops) {
+    const last = merged[merged.length - 1];
+    if (last && last.tag === op.tag && last.a1 === op.a0 && last.b1 === op.b0) {
+      last.a1 = op.a1; last.b1 = op.b1;
+    } else merged.push(op);
+  }
+  return merged;
+}
+/* 行内词级 diff:token(空白/非空白段)LCS,差异段包 <b class="hl">;
+ * 行过长(token>160)退化为整行底色,避免 O(n·m) 放大。 */
+function wordDiff(oldLine, newLine) {
+  const plain = {a: esc(oldLine) || " ", b: esc(newLine) || " "};
+  const ta = oldLine.match(/\s+|\S+/g) || [], tb = newLine.match(/\s+|\S+/g) || [];
+  if (!ta.length || !tb.length || ta.length > 160 || tb.length > 160) return plain;
+  const N = ta.length, M = tb.length;
+  const dp = Array.from({length: N + 1}, () => new Uint16Array(M + 1));
   for (let i = N - 1; i >= 0; i--)
     for (let j = M - 1; j >= 0; j--)
-      dp[i][j] = A[i] === B[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
-  const lcs = dp[0][0];
-  return {added: M - lcs, removed: N - lcs};
+      dp[i][j] = ta[i] === tb[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
+  let ca = "", cb = "", i = 0, j = 0;
+  const put = (s, tok, hl) => s + (hl ? `<b class="hl">${esc(tok)}</b>` : esc(tok));
+  while (i < N && j < M) {
+    if (ta[i] === tb[j]) { ca = put(ca, ta[i], false); cb = put(cb, tb[j], false); i++; j++; }
+    else if (dp[i + 1][j] >= dp[i][j + 1]) { ca = put(ca, ta[i], true); i++; }
+    else { cb = put(cb, tb[j], true); j++; }
+  }
+  while (i < N) { ca = put(ca, ta[i], true); i++; }
+  while (j < M) { cb = put(cb, tb[j], true); j++; }
+  return {a: ca || " ", b: cb || " "};
+}
+/* 单侧行渲染:与对侧逐行对齐 —— 删除/新增在对侧留 .gap 占位行(行号灰显),
+ * replace 行配对做行内高亮;整节缺失侧渲染一行说明 + 占位。 */
+function rowsForSide(pair, side) {
+  const out = [];
+  const row = (cls, gno, gdim, html) => out.push(
+    `<div class="dr${cls}">${gno == null ? `<span class="g"></span>` :
+      `<span class="g${gdim ? " gg" : ""}">${gno}</span>`}<span class="t">${html}</span></div>`);
+  const el = l => esc(l) || " ";
+  const {a, b, ops} = pair;
+  if (!ops) {
+    const src = side === "A" ? a : b;
+    if (!src) {
+      const other = side === "A" ? b : a;
+      out.push(`<div class="dr absent">${esc(t("absent"))}</div>`);
+      for (let i = 1; i < other.lines.length; i++) row(" gap", i + 1, true, " ");
+    } else {
+      const cls = side === "A" ? " mod-a" : " mod-b";
+      src.lines.forEach((l, i) => row(cls, i + 1, false, el(l)));
+    }
+    return out;
+  }
+  for (const op of ops) {
+    if (op.tag === "equal") {
+      const n = op.a1 - op.a0;
+      for (let k = 0; k < n; k++) {
+        const li = side === "A" ? a.lines[op.a0 + k] : b.lines[op.b0 + k];
+        row("", (side === "A" ? op.a0 : op.b0) + k + 1, false, el(li));
+      }
+    } else {
+      const nA = op.a1 - op.a0, nB = op.b1 - op.b0, paired = Math.min(nA, nB);
+      for (let k = 0; k < Math.max(nA, nB); k++) {
+        if (k < paired) {
+          const w = wordDiff(a.lines[op.a0 + k], b.lines[op.b0 + k]);
+          if (side === "A") row(" mod-a", op.a0 + k + 1, false, w.a);
+          else row(" mod-b", op.b0 + k + 1, false, w.b);
+        } else if (k < nA) {          /* replace 里多出的旧行 */
+          if (side === "A") row(" mod-a", op.a0 + k + 1, false, el(a.lines[op.a0 + k]));
+          else row(" gap", op.a0 + k + 1, true, " ");
+        } else {                       /* replace 里多出的新行 */
+          if (side === "A") row(" gap", op.b0 + k + 1, true, " ");
+          else row(" mod-b", op.b0 + k + 1, false, el(b.lines[op.b0 + k]));
+        }
+      }
+    }
+  }
+  return out;
+}
+/* 变更缩略条:标记直接取自渲染后的变更行(mod-a 左半红 / mod-b 右半绿),
+ * 折叠/展开后重算 —— 缩略图反映的是"可见表面",不是文档模型(折叠节不占高)。 */
+function mountMinimap(bd, a, b) {
+  bd.insertAdjacentHTML("beforeend",
+    `<div class="minimap" role="scrollbar" aria-label="${esc(t("mmLabel"))}">
+      <div class="mm-marks"></div><div class="mm-view"></div></div>`);
+  const mm = bd.querySelector(".minimap");
+  const mmMarks = mm.querySelector(".mm-marks");
+  const mmView = mm.querySelector(".mm-view");
+  const markCol = col => {
+    const cr = col.getBoundingClientRect(), sh = col.scrollHeight || 1;
+    col.querySelectorAll(".dr.mod-a,.dr.mod-b").forEach(row => {
+      if (row.closest(".sec.collapsed")) return;
+      const rr = row.getBoundingClientRect();
+      const pct = Math.min(99.5, Math.max(0, (rr.top - cr.top + col.scrollTop) / sh * 100));
+      const m = document.createElement("div");
+      m.className = "mm-mark " + (row.classList.contains("mod-a") ? "del" : "ins");
+      m.style.top = pct.toFixed(2) + "%";
+      mmMarks.appendChild(m);
+    });
+  };
+  const rebuild = () => { mmMarks.innerHTML = ""; markCol(a); markCol(b); updateView(); };
+  const updateView = () => {
+    const sh = a.scrollHeight, ch = a.clientHeight;
+    if (sh <= ch) { mmView.style.display = "none"; return; }
+    mmView.style.display = "";
+    mmView.style.top = (a.scrollTop / sh * 100).toFixed(2) + "%";
+    mmView.style.height = Math.max(4, ch / sh * 100).toFixed(2) + "%";
+  };
+  mm.onclick = e => {
+    const r = mm.getBoundingClientRect();
+    const ratio = Math.min(1, Math.max(0, (e.clientY - r.top) / r.height));
+    a.scrollTop = ratio * ((a.scrollHeight - a.clientHeight) || 1);   // 比例同步带动 B 列
+  };
+  a.addEventListener("scroll", updateView, {passive: true});
+  b.addEventListener("scroll", updateView, {passive: true});
+  rebuild();
+  return rebuild;
 }
 function secHtml(side, pair) {
-  const sec = side === "A" ? pair.a : pair.b;
   const changed = pair.added + pair.removed > 0;
   const collapsed = changed ? "" : " collapsed";
   const chgBadge = changed
     ? `<span class="chg"><b class="up">+${pair.added}</b><b class="dn">−${pair.removed}</b></span>` : "";
-  const head = sec || pair.a || pair.b;
-  let body;
-  if (!sec) body = `<div class="dr absent">${esc(t("absent"))}</div>`;
-  else body = sec.lines.map((l, j) =>
-    `<div class="dr"><span class="g">${j + 1}</span><span class="t">${esc(l) || " "}</span></div>`).join("");
+  const head = pair.a || pair.b;
+  const own = side === "A" ? pair.a : pair.b;
   const enc = esc(head.key.replace(/\|/, " / "));
   return `<div class="sec${collapsed}${changed ? " changed" : ""}" data-sec="${enc}">
     <div class="sec-band" data-toggle="${enc}"><span class="tw">${icon("chev", 12, "var(--faint)")}</span>
       <span class="lvl">${head.lvl}</span><span class="st">${esc(head.title)}</span>
       ${chgBadge}
-      <span class="cnt">${sec ? sec.lines.length + " " + t("lines") : "—"}</span></div>
-    <div class="sec-body">${body}</div></div>`;
+      <span class="cnt">${own ? own.lines.length + " " + t("lines") : "—"}</span></div>
+    <div class="sec-body">${rowsForSide(pair, side).join("")}</div></div>`;
 }
 function mountSections(ra, rb, my) {
   const pairs = pairSections(splitSections(ra), splitSections(rb));
@@ -468,13 +612,16 @@ function mountSections(ra, rb, my) {
   const b = document.createElement("div"); b.className = "diffcol"; b.id = "diffcol-B"; b.setAttribute("data-side", "B");
   pairs.forEach(p => { a.insertAdjacentHTML("beforeend", secHtml("A", p)); b.insertAdjacentHTML("beforeend", secHtml("B", p)); });
   bd.appendChild(a); bd.appendChild(b);
-  /* 手风琴:章节为异步加载,绑定须在创建之后;同一章节两侧同步折叠 */
+  const rebuildMm = mountMinimap(bd, a, b);
+  /* 手风琴:章节为异步加载,绑定须在创建之后;同一章节两侧同步折叠;折叠改变
+   * 可见高度,缩略条随之重算 */
   bd.querySelectorAll(".sec-band[data-toggle]").forEach(band => band.onclick = () => {
     const key = band.getAttribute("data-toggle");
     const first = app.querySelector(`.sec[data-sec="${CSS.escape(key)}"]`);
     const collapsing = first && !first.classList.contains("collapsed");
     app.querySelectorAll(`.sec[data-sec="${CSS.escape(key)}"]`).forEach(sec =>
       sec.classList.toggle("collapsed", collapsing));
+    rebuildMm();
   });
   attachSync();
 }

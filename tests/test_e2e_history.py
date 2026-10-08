@@ -149,6 +149,54 @@ def test_section_badges_and_accordion(page):
     assert "collapsed" not in overview_b.get_attribute("class")
 
 
+def test_inline_word_diff_and_alignment(page):
+    """行内变更:整行底色 + 词级高亮(replace 配对),两侧行对齐(缺失侧占位)。"""
+    page.goto(page.url + "&ra=8&rb=11")
+    page.wait_for_selector(".dr.mod-b")
+    page.wait_for_timeout(300)
+    assert page.locator(".dr.mod-a").count() >= 1          # 旧侧行:红底
+    assert page.locator(".dr.mod-b").count() >= 2          # 新侧行:绿底
+    hls = page.locator(".dr.mod-b .hl").all_text_contents()
+    assert any("newer" in h for h in hls), f"Usage 行内应高亮 'newer':{hls}"
+    assert any("Extra" in h for h in hls), f"Tips 行内应高亮 'Extra':{hls}"
+    # 对齐:两侧行数一致(删除/新增在对侧留占位行)
+    na = page.locator("#diffcol-A .dr").count()
+    nb = page.locator("#diffcol-B .dr").count()
+    assert na == nb, f"两侧行数应相等:{na} vs {nb}"
+    assert page.locator(".dr.gap").count() >= 1            # Tips 新增行在 A 侧留占位
+
+
+def test_minimap_marks_and_click_jump(page):
+    """变更缩略条:红/绿标记与变更行同位;点击按比例跳转并带动两列;折叠重算。"""
+    page.goto(page.url + "&ra=8&rb=11")
+    page.wait_for_selector(".dr.mod-b")
+    page.wait_for_timeout(300)
+    expect(page.locator(".minimap")).to_be_visible()
+    dels = page.locator(".mm-mark.del").count()
+    ins = page.locator(".mm-mark.ins").count()
+    assert dels >= 2 and ins >= 3
+    # 折叠变更节 → 标记消失;再展开 → 恢复
+    page.locator('#diffcol-A .sec[data-sec="1 / Tips"] .sec-band').click()
+    page.wait_for_timeout(200)
+    assert page.locator(".mm-mark").count() == dels + ins - 3
+    page.locator('#diffcol-A .sec[data-sec="1 / Tips"] .sec-band').click()
+    page.wait_for_timeout(200)
+    assert page.locator(".mm-mark").count() == dels + ins
+    # 压缩高度制造滚动,点击缩略条 60% 处 → A 列按比例滚动,B 列联动
+    page.evaluate("""() => {
+      document.querySelector('.diffbody').style.height = '180px';
+      for (const id of ['diffcol-A', 'diffcol-B'])
+        document.getElementById(id).style.height = '180px';
+    }""")
+    page.wait_for_timeout(150)
+    mm = page.locator(".minimap").bounding_box()
+    page.mouse.click(mm["x"] + 9, mm["y"] + mm["height"] * 0.6)
+    page.wait_for_timeout(200)
+    assert page.evaluate("document.getElementById('diffcol-A').scrollTop") > 0
+    assert page.evaluate("document.getElementById('diffcol-B').scrollTop") > 0
+    assert page.locator(".mm-view").is_visible()
+
+
 def test_scroll_sync(page):
     """左右滚动联动:展开全部章节并压缩列高制造滚动,滚动 A 列 B 列按比例跟随。"""
     page.evaluate("""() => document.querySelectorAll('.sec.collapsed')
