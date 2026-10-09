@@ -86,9 +86,14 @@ jobs:
           BR: ${{ steps.push.outputs.branch }}
         run: |
           set -euo pipefail
-          if ! timeout 1200 gh pr watch "$BR" --exit-status --interval 30; then
-            echo "::error::capture PR 未在 20 分钟内合并(多半是 dispatched CI 未过),Pages 未发布"
-            exit 1
+          # dispatched CI 可能在 runner 队列排很久,窗口放宽到 45 分钟
+          if ! timeout 2700 gh pr watch "$BR" --exit-status --interval 30; then
+            STATE=$(gh pr view "$BR" --json state -q .state 2>/dev/null || echo UNKNOWN)
+            if [ "$STATE" != "MERGED" ]; then
+              echo "::error::capture PR 未在 45 分钟内合并(多半是 dispatched CI 未过),Pages 未发布"
+              exit 1
+            fi
+            echo "::warning::pr watch 超时,但 PR 实际已合并,继续发布"
           fi
           gh workflow run pages.yml --ref main
           git push origin --delete "$BR" || true
