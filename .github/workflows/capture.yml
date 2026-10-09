@@ -7,6 +7,8 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
+  actions: write
 
 concurrency:
   group: capture
@@ -42,9 +44,39 @@ jobs:
             git commit -m "capture: rebuild site $(date -u +%FT%TZ)"
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
-      - name: Push
+      - name: Push capture branch
+        id: push
         if: steps.commit.outputs.changed == 'true'
-        run: git push
+        run: |
+          BR="capture/$(date -u +%F)"
+          git checkout -b "$BR"
+          git push --force origin "$BR"
+          echo "branch=$BR" >> "$GITHUB_OUTPUT"
+          echo "head_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      # main 有分支保护(require PR + check test),且 GITHUB_TOKEN 触发的
+      # 事件不会拉起 pull_request CI——因此由本工作流主动 dispatch CI,
+      # 对 PR head 真实跑测试套件并落 test check,再武装 auto-merge。
+      - name: Open PR and arm auto-merge
+        if: steps.commit.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BR: ${{ steps.push.outputs.branch }}
+          HEAD_SHA: ${{ steps.push.outputs.head_sha }}
+        run: |
+          set -euo pipefail
+          if ! gh pr list --state open --head "$BR" --json number -q '.[0].number' | grep -q .; then
+            OPEN_OTHER=$(gh pr list --state open --json headRefName \
+              -q '[.[].headRefName | select(startswith("capture/"))] | length')
+            if [ "$OPEN_OTHER" -gt 0 ]; then
+              echo "::error::存在其他未合并的 capture PR,先处理再发布;本次终止"
+              exit 1
+            fi
+            gh pr create --base main --head "$BR" \
+              --title "capture: rebuild site $(date -u +%FT%TZ)" \
+              --body "Automated daily capture from [run ${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}). Merges automatically once required check \`test\` passes."
+          fi
+          gh workflow run ci.yml --ref main -f head_sha="$HEAD_SHA"
+          gh pr merge "$BR" --auto --squash
       - name: Report failures
         if: failure()
         run: echo "::error::capture 构建失败,详见日志"
