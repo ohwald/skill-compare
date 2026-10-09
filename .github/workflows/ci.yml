@@ -5,12 +5,20 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      head_sha:
+        description: "Commit SHA to test (capture bot dispatches this for its PR head)"
+        required: true
+        type: string
 
 permissions:
   contents: read
+  checks: write
 
+# workflow_dispatch 按 head_sha 区分;push=main,pull_request=refs/pull/N/merge
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ inputs.head_sha || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -20,6 +28,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ inputs.head_sha || github.sha }}
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -44,6 +53,20 @@ jobs:
           node --check template/timeline.js
       - name: No leftover template placeholders in artifacts
         run: "! grep -rEl '__[A-Z_]+__' /tmp/site-smoke/"
+      - name: Post required check on capture PR head
+        # GITHUB_TOKEN 触发的事件不会拉起 pull_request CI,capture 改走
+        # workflow_dispatch;required check 按 app+context 匹配,须由本
+        # 工作流在 PR head SHA 上显式落 test check,auto-merge 才会合并。
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --method POST repos/${{ github.repository }}/check-runs \
+            -f name=test \
+            -f head_sha="${{ inputs.head_sha }}" \
+            -f status=completed \
+            -f conclusion=success \
+            -F details_url=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
       - name: Summary
         if: always()
         run: echo "CI = tests + build smoke + JS gate + placeholder gate"
