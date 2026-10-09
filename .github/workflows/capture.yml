@@ -77,6 +77,21 @@ jobs:
           fi
           gh workflow run ci.yml --ref main -f head_sha="$HEAD_SHA"
           gh pr merge "$BR" --auto --squash
+      # auto-merge 由 bot 的 GITHUB_TOKEN 完成,合并 push 同样不会拉起
+      # Pages(push 触发被抑制)——须等合并落地后主动 dispatch Pages。
+      - name: Wait for merge, then publish Pages
+        if: steps.commit.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BR: ${{ steps.push.outputs.branch }}
+        run: |
+          set -euo pipefail
+          if ! timeout 1200 gh pr watch "$BR" --exit-status --interval 30; then
+            echo "::error::capture PR 未在 20 分钟内合并(多半是 dispatched CI 未过),Pages 未发布"
+            exit 1
+          fi
+          gh workflow run pages.yml --ref main
+          git push origin --delete "$BR" || true
       - name: Report failures
         if: failure()
         run: echo "::error::capture 构建失败,详见日志"
