@@ -57,6 +57,7 @@ jobs:
       # 事件不会拉起 pull_request CI——因此由本工作流主动 dispatch CI,
       # 对 PR head 真实跑测试套件并落 test check,再武装 auto-merge。
       - name: Open PR and arm auto-merge
+        id: pr
         if: steps.commit.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
@@ -64,19 +65,22 @@ jobs:
           HEAD_SHA: ${{ steps.push.outputs.head_sha }}
         run: |
           set -euo pipefail
-          if ! gh pr list --state open --head "$BR" --json number -q '.[0].number' | grep -q .; then
+          PRNUM=$(gh pr list --state open --head "$BR" --json number -q '.[0].number' || true)
+          if [ -z "$PRNUM" ]; then
             OPEN_OTHER=$(gh pr list --state open --json headRefName \
               -q '[.[].headRefName | select(startswith("capture/"))] | length')
             if [ "$OPEN_OTHER" -gt 0 ]; then
               echo "::error::存在其他未合并的 capture PR,先处理再发布;本次终止"
               exit 1
             fi
-            gh pr create --base main --head "$BR" \
+            PR_URL=$(gh pr create --base main --head "$BR" \
               --title "capture: rebuild site $(date -u +%FT%TZ)" \
-              --body "Automated daily capture from [run ${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}). Merges automatically once required check \`test\` passes."
+              --body "Automated daily capture from [run ${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}). Merges automatically once required check \`test\` passes.")
+            PRNUM=${PR_URL##*/}
           fi
+          echo "pr_number=$PRNUM" >> "$GITHUB_OUTPUT"
           gh workflow run ci.yml --ref main -f head_sha="$HEAD_SHA"
-          gh pr merge "$BR" --auto --squash
+          gh pr merge "$PRNUM" --auto --squash
       # auto-merge 由 bot 的 GITHUB_TOKEN 完成,合并 push 同样不会拉起
       # Pages(push 触发被抑制)——须等合并落地后主动 dispatch Pages。
       - name: Wait for merge, then publish Pages
@@ -84,16 +88,19 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           BR: ${{ steps.push.outputs.branch }}
+          PRNUM: ${{ steps.pr.outputs.pr_number }}
         run: |
           set -euo pipefail
-          # dispatched CI 可能在 runner 队列排很久,窗口放宽到 45 分钟
-          if ! timeout 2700 gh pr watch "$BR" --exit-status --interval 30; then
-            STATE=$(gh pr view "$BR" --json state -q .state 2>/dev/null || echo UNKNOWN)
-            if [ "$STATE" != "MERGED" ]; then
-              echo "::error::capture PR 未在 45 分钟内合并(多半是 dispatched CI 未过),Pages 未发布"
-              exit 1
-            fi
-            echo "::warning::pr watch 超时,但 PR 实际已合并,继续发布"
+          MERGED=""
+          for i in $(seq 1 90); do
+            STATE=$(gh pr view "$PRNUM" --json state -q .state 2>/dev/null || echo UNKNOWN)
+            [ "$STATE" = "MERGED" ] && { MERGED=1; break; }
+            [ "$STATE" = "CLOSED" ] && break
+            sleep 30
+          done
+          if [ -z "$MERGED" ]; then
+            echo "::error::capture PR #${PRNUM} 未在 45 分钟内合并(多半是 dispatched CI 未过),Pages 未发布"
+            exit 1
           fi
           gh workflow run pages.yml --ref main
           git push origin --delete "$BR" || true
